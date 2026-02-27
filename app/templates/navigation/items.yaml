@@ -1,0 +1,23 @@
+# app/templates/navigation/items.yaml
+# ── Navigation ──────────────────────────────────────────────────────────────
+# Reihenfolge bestimmt die Anzeigereihenfolge im Menü.
+# Genau ein Eintrag darf default: true haben.
+#
+# Verfügbare Icons:
+#   home | list | chart | clock | alert | settings |
+#   database | users | server | shield
+#
+# Eine neue Seite hinzufügen:
+#   1. Eintrag hier ergänzen
+#   2. Partial anlegen: app/templates/partials/lists/<key>.html
+
+- key: overview
+  label: Übersicht
+  url: /api/ui/overview/tab
+  icon: home
+  default: true
+
+- key: settings
+  label: Einstellungen
+  url: /api/ui/settings/tab
+  icon: settings
