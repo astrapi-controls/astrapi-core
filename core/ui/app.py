@@ -8,7 +8,7 @@ from .page_factory import register_pages
 CORE_ROOT = Path(__file__).resolve().parents[1]
 
 
-def create(app_root: Path, config: dict | None = None) -> Flask:
+def create(app_root: Path, config: dict | None = None, extra_init=None) -> Flask:
     """Erstellt die Flask-App.
 
     Args:
@@ -93,6 +93,10 @@ def create(app_root: Path, config: dict | None = None) -> Flask:
 
     # ── Routen ────────────────────────────────────────────────────────────────
     register_pages(app, nav_items)
+
+    # ── App-spezifische Erweiterungen ────────────────────────────────────────
+    if extra_init:
+        extra_init(app)
 
     default_item = next((it for it in nav_items if it["default"]), nav_items[0])
 
