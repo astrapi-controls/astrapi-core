@@ -158,7 +158,10 @@ def create(
             app.register_blueprint(mod.blueprint)
 
     # ── Einstellungs-Routen ───────────────────────────────────────────────────
-    _register_settings_routes(app, modules, app_cfg)
+    # Hat ein settings-Modul einen eigenen Blueprint, übernimmt er /ui/settings/content.
+    settings_has_blueprint = any(m.key == "settings" and m.ui_blueprint for m in modules)
+    _register_settings_routes(app, modules, app_cfg,
+                               skip_content=settings_has_blueprint)
 
     # ── Projektspezifischer Hook ──────────────────────────────────────────────
     if extra_init:
@@ -191,8 +194,12 @@ def create(
 # Einstellungs-Routen
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _register_settings_routes(app: Flask, modules: list, app_cfg: dict) -> None:
-    """Registriert Tab- und Speicher-Routen für die Einstellungsseite."""
+def _register_settings_routes(app: Flask, modules: list, app_cfg: dict,
+                               skip_content: bool = False) -> None:
+    """Registriert Tab- und Speicher-Routen für die Einstellungsseite.
+
+    skip_content: True wenn ein settings-Modul mit Blueprint /ui/settings/content selbst bedient.
+    """
 
     def _ctx(flash: str = "") -> dict:
         return {
@@ -211,9 +218,10 @@ def _register_settings_routes(app: Flask, modules: list, app_cfg: dict) -> None:
             title="Einstellungen",
         )
 
-    @app.route("/ui/settings/content")
-    def settings_content():
-        return render_template("partials/lists/settings.html", **_ctx())
+    if not skip_content:
+        @app.route("/ui/settings/content")
+        def settings_content():
+            return render_template("partials/lists/settings.html", **_ctx())
 
     @app.route("/ui/settings/save/global", methods=["POST"])
     def settings_save_global():
