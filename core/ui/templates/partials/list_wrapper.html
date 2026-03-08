@@ -15,6 +15,18 @@
 #}
 {% import 'partials/components/ui_macros.html' as ui %}
 
+{# ── Optionaler Aktions-Header (Neu + Settings) ──────────────────────────── #}
+{% if not light_mode or module_has_settings(module) %}
+<div style="display:flex; justify-content:flex-end; gap:6px; margin-bottom:10px;">
+  {% if not light_mode %}
+  {{ ui.add_button(module=module, container_id=container_id, loading_id=loading_id) }}
+  {% endif %}
+  {% if module_has_settings(module) %}
+  {{ ui.settings_button(module=module) }}
+  {% endif %}
+</div>
+{% endif %}
+
 {% set _run_key  = module ~ ":__run__" %}
 {% set _dbg_key  = module ~ ":__debug__" %}
 {% set _run_all  = _run_key in (running or {}) %}
