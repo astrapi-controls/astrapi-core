@@ -79,7 +79,7 @@ def create(
         _app = _raw.get("app", {})
         app_cfg = {
             "APP_NAME":    _app.get("name",       "myapp"),
-            "APP_VERSION": _app.get("version",    "0.1.0"),
+            "APP_VERSION": get_version(app_root.parent, _app.get("version", "0.1.0")),
             "APP_LANG":    _app.get("lang",        "de"),
             "LIGHT_MODE":  bool(_app.get("light_mode", False)),
             "APP_LOGO_SVG": _app.get("logo_svg",  None),
