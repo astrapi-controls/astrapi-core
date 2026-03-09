@@ -2,7 +2,12 @@
 {% import 'partials/components/card.html' as card %}
 
 <div class="page-header">
-  <span class="page-title">{{ label }}</span>
+  <div style="display:flex; gap:6px; align-items:center;">
+    <span class="page-title">{{ label }}</span>
+    {% if module_has_settings(key) %}
+    {{ ui.settings_button(module=key) }}
+    {% endif %}
+  </div>
   <button class="btn btn-primary btn-sm"
     hx-get="/ui/{{ key }}/create?container_id={{ container_id }}&loading_id={{ loading_id }}"
     hx-target="body" hx-swap="beforeend">

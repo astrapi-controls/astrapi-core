@@ -1,0 +1,6 @@
+test_01:
+  cron: 0 2 * * *
+  enabled: false
+  label: Test 01
+  steps:
+  - hosts.check

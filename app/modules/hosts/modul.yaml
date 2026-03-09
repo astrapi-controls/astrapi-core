@@ -5,7 +5,4 @@ icon:        server
 nav_group:   Module
 nav_default: true
 
-settings_defaults:
-  default_port:    "22"
-  default_user:    root
-  connect_timeout: "10"
+# settings_defaults werden automatisch aus settings.yaml extrahiert

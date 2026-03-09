@@ -9,8 +9,9 @@
     submit_url   – Ziel-URL (POST für Create, PUT für Edit)
     method       – "post" oder "put"
     title        – Titel des Dialogs
-    container_id – HTMX-Target nach Speichern
+    container_id – Fallback (wird nicht mehr für hx-target genutzt)
     loading_id   – HTMX-Indikator
+    submit_url   – Flask-Route die HTML zurückgibt (wird in #main-content geladen)
 #}
 <div
   id="create-edit-modal"
@@ -37,7 +38,7 @@
 
     <form id="create-edit-form"
       hx-{{ method }}="{{ submit_url }}"
-      hx-target="#{{ container_id }}"
+      hx-target="#main-content"
       hx-swap="innerHTML"
       hx-indicator="#{{ loading_id }}"
       style="display:flex; flex-direction:column; gap:14px;"
@@ -77,7 +78,7 @@
       {% endfor %}
 
       {# ── Footer ─────────────────────────────────────────────────────────── #}
-      <div style="display:flex; justify-content:center; gap:8px; padding-top:10px; border-top:1px solid var(--border-s); margin-top:2px;">
+      <div style="display:flex; justify-content:center; gap:10px; padding-top:14px; margin-top:6px;">
         <button
           type="button"
           onclick="document.getElementById('create-edit-modal').remove()"
@@ -142,7 +143,9 @@
 
     htmx.trigger(form, 'submit');
     form.addEventListener('htmx:afterRequest', function handler(e) {
-      if (e.detail.successful) document.getElementById('create-edit-modal')?.remove();
+      if (e.detail.successful) {
+        document.getElementById('create-edit-modal')?.remove();
+      }
       form.removeEventListener('htmx:afterRequest', handler);
     });
   });

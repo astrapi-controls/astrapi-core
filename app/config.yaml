@@ -1,8 +1,7 @@
 # app/config.yaml – App-Konfiguration
 
 app:
-  name:       AstrapiControllll
-  version:    3.0.0
+  name:       AstrapiControl
   lang:       de
   light_mode: false
   logo_svg:   null

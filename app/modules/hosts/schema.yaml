@@ -10,7 +10,7 @@ id_field:
 fields:
   - name: description
     type: text
-    label: BeschreibungXXX
+    label: Beschreibung
     placeholder: "Web-Server 03"
     max: 100
     column: 1

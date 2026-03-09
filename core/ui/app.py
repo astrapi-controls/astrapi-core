@@ -20,7 +20,7 @@ from typing import Optional, Callable
 from .page_factory import register_pages
 from .swagger_utils import register_ui_docs
 from .module_registry import load_modules, register_flask_modules, build_nav_items
-from ..system.version import get_version, get_version_cached
+from ..system.version import get_app_version, get_core_version
 from .settings_registry import (
     init as settings_init, seed_defaults, set_many, all_settings,
 )
@@ -72,15 +72,12 @@ def create(
 
     # ── App-Konfiguration laden ───────────────────────────────────────────────
     app_cfg: dict = {}
-    _version_root:    Path = app_root.parent
-    _version_default: str  = "0.1.0"
     cfg_yaml = app_root / "config.yaml"
     if cfg_yaml.exists():
         import yaml as _yaml
         with open(cfg_yaml, encoding="utf-8") as _f:
             _raw = _yaml.safe_load(_f) or {}
         _app = _raw.get("app", {})
-        _version_default = _app.get("version", "0.1.0")
         app_cfg = {
             "APP_NAME":     _app.get("name",       "myapp"),
             "APP_LANG":     _app.get("lang",        "de"),
@@ -93,8 +90,10 @@ def create(
             if cfg_path.exists():
                 mod     = _load_module_file("app_settings", cfg_path)
                 app_cfg = {k: v for k, v in vars(mod).items() if not k.startswith("_")}
-                _version_default = app_cfg.get("APP_VERSION", _version_default)
                 break
+
+    _app_version  = get_app_version(app_root)
+    _core_version = get_core_version(CORE_ROOT.parent)
 
     light_mode: bool = app_cfg.get("LIGHT_MODE", False)
 
@@ -140,7 +139,8 @@ def create(
 
         return {
             "app_name":            app_cfg.get("APP_NAME",     "myapp"),
-            "app_version":         get_version_cached(_version_root, _version_default),
+            "app_version":         _app_version,
+            "core_version":        _core_version,
             "app_logo_svg":        app_cfg.get("APP_LOGO_SVG", None),
             "app_lang":            app_cfg.get("APP_LANG",     "de"),
             "light_mode":          light_mode,
@@ -185,6 +185,14 @@ def create(
     # ── Projektspezifischer Hook ──────────────────────────────────────────────
     if extra_init:
         extra_init(app)
+
+    # ── Scheduler starten ─────────────────────────────────────────────────────
+    try:
+        from core.modules.scheduler.engine import init as scheduler_init
+        scheduler_init()
+    except Exception as _e:
+        import warnings
+        warnings.warn(f"Scheduler konnte nicht gestartet werden: {_e}")
 
     # ── Root-Redirect → erstes/default Nav-Item ───────────────────────────────
     default_item = next(

@@ -14,9 +14,8 @@ router = APIRouter()
 
 class ItemIn(BaseModel):
     description: Optional[str] = ""
-    ip:          Optional[str] = ""
-    port:        Optional[int] = 22
-    tags:        Optional[str] = ""
+    command:     Optional[str] = ""
+    schedule:    Optional[str] = ""
     enabled:     bool          = True
 
 

@@ -39,9 +39,10 @@ def create_modal():
         id_field=SCHEMA["id_field"],
         item=None,
         item_id=None,
-        submit_url=f"/api/{KEY}/",
+        submit_url=f"/ui/{KEY}/",
         method="post",
         title=f"Neuer {_LABEL}",
+        reload_url="/ui/tasks/content",
         container_id=request.args.get("container_id", _C_ID),
         loading_id=request.args.get("loading_id", _L_ID),
     )
@@ -58,9 +59,10 @@ def edit_modal(item_id: str):
         id_field=SCHEMA["id_field"],
         item=item,
         item_id=item_id,
-        submit_url=f"/api/{KEY}/{item_id}",
-        method="put",
+        submit_url=f"/ui/{KEY}/{item_id}/update",
+        method="post",
         title=f"{_LABEL} bearbeiten – {item_id}",
+        reload_url="/ui/tasks/content",
         container_id=request.args.get("container_id", _C_ID),
         loading_id=request.args.get("loading_id", _L_ID),
     )
@@ -75,6 +77,7 @@ def delete_modal(item_id: str):
         verb="löschen",
         confirm_url=f"/api/{KEY}/{item_id}",
         method="delete",
+        reload_url="/ui/tasks/content",
         container_id=request.args.get("container_id", _C_ID),
         loading_id=request.args.get("loading_id", _L_ID),
     )
@@ -91,6 +94,39 @@ def toggle_modal(item_id: str):
         verb=verb,
         confirm_url=f"/api/{KEY}/{item_id}/toggle",
         method="patch",
+        reload_url="/ui/tasks/content",
         container_id=request.args.get("container_id", _C_ID),
         loading_id=request.args.get("loading_id", _L_ID),
     )
+
+def _form_data() -> dict:
+    """Liest Form-Felder typsicher aus und gibt ein dict zurück."""
+    data = {}
+    for field in SCHEMA["fields"]:
+        name = field["name"]
+        if field.get("type") == "boolean":
+            data[name] = name in request.form
+        else:
+            data[name] = request.form.get(name, "")
+    return data
+
+
+@bp.route(f"/ui/{KEY}/", methods=["POST"])
+def create_apply():
+    item_id = request.form.get(SCHEMA["id_field"]["name"], "").strip()
+    if not item_id:
+        return "ID fehlt", 400
+    try:
+        store.create(item_id, _form_data())
+    except KeyError:
+        return "Bereits vorhanden", 409
+    return render_template(f"{KEY}/partials/list.html", **_ctx())
+
+
+@bp.route(f"/ui/{KEY}/<item_id>/update", methods=["POST"])
+def edit_apply(item_id: str):
+    try:
+        store.update(item_id, _form_data())
+    except KeyError:
+        return "Nicht gefunden", 404
+    return render_template(f"{KEY}/partials/list.html", **_ctx())
