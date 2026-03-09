@@ -19,6 +19,9 @@ from pathlib import Path
 CORE_ROOT    = Path(__file__).resolve().parent           # core/ui/  (templates, static)
 CORE_MOD_DIR = Path(__file__).resolve().parents[1] / "modules"  # core/modules/
 
+# Globale Registry – wird von load_modules() befüllt; von FastAPI-Templates genutzt
+_mod_registry: dict = {}
+
 
 # ── Laden ─────────────────────────────────────────────────────────────────────
 
@@ -46,7 +49,17 @@ def _load_from_dir(modules_dir: Path, pkg_prefix: str) -> dict:
             if instance is None or not isinstance(instance, AstrapiModule):
                 warnings.warn(f"Modul '{entry.name}' ({pkg_prefix}): keine AstrapiModule-Instanz gefunden")
                 continue
-            instance.module_root = entry
+            # module_root nur setzen wenn dieses Verzeichnis Templates hat
+            # oder noch kein module_root gesetzt ist (z.B. app re-exportiert Core-Instanz)
+            if instance.module_root is None or (entry / "templates").exists():
+                instance.module_root = entry
+            # settings.yaml nachladen wenn das Modul es nicht selbst gesetzt hat
+            if not instance.settings_schema:
+                settings_yaml = entry / "settings.yaml"
+                if settings_yaml.exists():
+                    import yaml as _yaml
+                    with open(settings_yaml, encoding="utf-8") as _f:
+                        instance.settings_schema = _yaml.safe_load(_f) or []
             found[instance.key] = instance
         except Exception as e:
             warnings.warn(f"Modul '{entry.name}' ({pkg_prefix}) konnte nicht geladen werden: {e}")
@@ -55,21 +68,38 @@ def _load_from_dir(modules_dir: Path, pkg_prefix: str) -> dict:
 
 
 def load_modules(app_root: Path) -> list:
-    """Lädt Module aus core/modules/ und app/modules/.
+    """Lädt Module aus core/modules/, app/overrides/ und app/modules/.
 
-    app/ überschreibt core/ bei gleichem Key.
-    Reihenfolge: core zuerst, dann app-exklusive.
+    Priorität (höher überschreibt niedrigere):
+      app/modules/    > app/overrides/ > core/modules/
+    app/overrides/   – Module die Core-Module überschreiben/ergänzen
+    app/modules/      – reine App-Module
+    Reihenfolge im Ergebnis: core zuerst, dann app-exklusive.
     """
-    core_mods = _load_from_dir(CORE_MOD_DIR, "core.modules")
-    app_mods  = _load_from_dir(app_root  / "modules", "app.modules")
+    core_mods = _load_from_dir(CORE_MOD_DIR,              "core.modules")
+    ext_mods  = _load_from_dir(app_root / "overrides",   "app.overrides")
+    app_mods  = _load_from_dir(app_root / "modules",      "app.modules")
 
-    merged  = {**core_mods, **app_mods}
+    # module_root erben: Overrides ohne eigene Templates übernehmen Core-Pfad
+    def _inherit_root(overrides: dict, base: dict) -> None:
+        for key, m in overrides.items():
+            if key in base:
+                ref = base[key]
+                if m.module_root is None or not (m.module_root / "templates").exists():
+                    m.module_root = ref.module_root
+
+    _inherit_root(ext_mods, core_mods)
+    _inherit_root(app_mods, {**core_mods, **ext_mods})
+
+    merged  = {**core_mods, **ext_mods, **app_mods}
     ordered = []
+    seen: set = set()
     for key in sorted(core_mods):
-        ordered.append(merged[key])
-    for key in sorted(app_mods):
-        if key not in core_mods:
-            ordered.append(merged[key])
+        ordered.append(merged[key]); seen.add(key)
+    for key in sorted({**ext_mods, **app_mods}):
+        if key not in seen:
+            ordered.append(merged[key]); seen.add(key)
+    _mod_registry.update({m.key: m for m in ordered})
     return ordered
 
 
@@ -205,7 +235,21 @@ def build_nav_items(modules: list, app_root: Path) -> list[dict]:
         for mod in auto_mods:
             app_items.append(_auto_nav_item(mod))
 
-    items = app_items + core_items
+    # Core-Items deduplizieren: Keys die bereits in app_items stehen überspringen.
+    # Separatoren ohne nachfolgende sichtbare Items werden ebenfalls unterdrückt.
+    app_keys = {i["key"] for i in app_items if not i.get("separator")}
+    filtered_core: list[dict] = []
+    pending_sep = None
+    for item in core_items:
+        if item.get("separator"):
+            pending_sep = item
+        elif item["key"] not in app_keys:
+            if pending_sep:
+                filtered_core.append(pending_sep)
+                pending_sep = None
+            filtered_core.append(item)
+
+    items = app_items + filtered_core
 
     # Fallback wenn gar nichts da ist
     if not items:

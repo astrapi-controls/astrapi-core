@@ -79,7 +79,7 @@ def create(
         _app = _raw.get("app", {})
         app_cfg = {
             "APP_NAME":    _app.get("name",       "myapp"),
-            "APP_VERSION": _app.get("version",    "0.1.0"),
+            "APP_VERSION": get_version(app_root.parent, _app.get("version", "0.1.0")),
             "APP_LANG":    _app.get("lang",        "de"),
             "LIGHT_MODE":  bool(_app.get("light_mode", False)),
             "APP_LOGO_SVG": _app.get("logo_svg",  None),
@@ -122,15 +122,27 @@ def create(
     app.jinja_env.loader = ChoiceLoader(all_loaders)
 
     # ── Globale Template-Variablen ────────────────────────────────────────────
+    _mod_map: dict = {m.key: m for m in modules}
+
     @app.context_processor
     def _inject_globals():
+        def module_has_settings(key: str) -> bool:
+            m = _mod_map.get(key)
+            return bool(m and m.settings_schema)
+
+        def module_label(key: str) -> str:
+            m = _mod_map.get(key)
+            return m.label if m else key.replace("_", " ").title()
+
         return {
-            "app_name":     app_cfg.get("APP_NAME",     "myapp"),
-            "app_version":  app_cfg.get("APP_VERSION",  "0.1.0"),
-            "app_logo_svg": app_cfg.get("APP_LOGO_SVG", None),
-            "app_lang":     app_cfg.get("APP_LANG",     "de"),
-            "light_mode":   light_mode,
-            "modules":      modules,
+            "app_name":            app_cfg.get("APP_NAME",     "myapp"),
+            "app_version":         app_cfg.get("APP_VERSION",  "0.1.0"),
+            "app_logo_svg":        app_cfg.get("APP_LOGO_SVG", None),
+            "app_lang":            app_cfg.get("APP_LANG",     "de"),
+            "light_mode":          light_mode,
+            "modules":             modules,
+            "module_has_settings": module_has_settings,
+            "module_label":        module_label,
         }
 
     # ── Navigation aus Modulen + optionaler items.yaml ────────────────────────
@@ -158,7 +170,13 @@ def create(
             app.register_blueprint(mod.blueprint)
 
     # ── Einstellungs-Routen ───────────────────────────────────────────────────
-    _register_settings_routes(app, modules, app_cfg)
+    # Hat ein settings-Modul einen eigenen Blueprint, übernimmt er /ui/settings/content.
+    settings_has_blueprint = any(m.key == "settings" and m.ui_blueprint for m in modules)
+    _register_settings_routes(app, modules, app_cfg,
+                               skip_content=settings_has_blueprint)
+
+    # ── Generische Modul-Settings-Modal-Routen ────────────────────────────────
+    _register_module_settings_routes(app, modules)
 
     # ── Projektspezifischer Hook ──────────────────────────────────────────────
     if extra_init:
@@ -191,8 +209,12 @@ def create(
 # Einstellungs-Routen
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _register_settings_routes(app: Flask, modules: list, app_cfg: dict) -> None:
-    """Registriert Tab- und Speicher-Routen für die Einstellungsseite."""
+def _register_settings_routes(app: Flask, modules: list, app_cfg: dict,
+                               skip_content: bool = False) -> None:
+    """Registriert Tab- und Speicher-Routen für die Einstellungsseite.
+
+    skip_content: True wenn ein settings-Modul mit Blueprint /ui/settings/content selbst bedient.
+    """
 
     def _ctx(flash: str = "") -> dict:
         return {
@@ -211,9 +233,10 @@ def _register_settings_routes(app: Flask, modules: list, app_cfg: dict) -> None:
             title="Einstellungen",
         )
 
-    @app.route("/ui/settings/content")
-    def settings_content():
-        return render_template("partials/lists/settings.html", **_ctx())
+    if not skip_content:
+        @app.route("/ui/settings/content")
+        def settings_content():
+            return render_template("partials/lists/settings.html", **_ctx())
 
     @app.route("/ui/settings/save/global", methods=["POST"])
     def settings_save_global():
@@ -234,4 +257,41 @@ def _register_settings_routes(app: Flask, modules: list, app_cfg: dict) -> None:
         return render_template(
             "partials/lists/settings.html",
             **_ctx(f"Einstellungen für \"{mod.label}\" gespeichert."),
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Generische Modul-Settings-Modal-Routen
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _register_module_settings_routes(app: Flask, modules: list) -> None:
+    """Registriert GET/POST /ui/<key>/settings für Module mit settings_schema."""
+    from .settings_registry import get_module, set_many as _set_many
+
+    mod_map = {m.key: m for m in modules if m.settings_schema}
+    if not mod_map:
+        return
+
+    @app.route("/ui/<module_key>/settings", methods=["GET", "POST"])
+    def module_settings_modal(module_key: str):
+        mod = mod_map.get(module_key)
+        if mod is None:
+            return "", 404
+
+        if request.method == "POST":
+            prefixed = {f"module.{module_key}.{k}": v
+                        for k, v in request.form.to_dict().items()}
+            _set_many(prefixed)
+
+        current_values = {
+            field["key"]: get_module(module_key, field["key"],
+                                     field.get("default", ""))
+            for field in mod.settings_schema
+        }
+        return render_template(
+            "partials/settings_modal.html",
+            mod=mod,
+            schema=mod.settings_schema,
+            values=current_values,
+            saved=(request.method == "POST"),
         )

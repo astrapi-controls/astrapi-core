@@ -63,7 +63,7 @@
       {% endif %}
 
       {# ── Felder aus Schema, nach row gruppiert ──────────────────────────── #}
-      {% set values = item or {} %}
+      {% set values = values if values is mapping else (item if item is mapping else {}) %}
       {% set rows = schema | groupby("row") %}
       {% for row, fields in rows %}
         <div style="display:grid;

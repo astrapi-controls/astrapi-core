@@ -10,5 +10,5 @@ module = AstrapiModule(
     icon         = "monitor",
     api_router   = router,
     ui_blueprint = bp,
-    nav_group    = "System-Module",
+    nav_group    = "System",
 )
