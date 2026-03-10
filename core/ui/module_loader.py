@@ -1,5 +1,5 @@
 """
-core/ui/module_loader.py  –  Lädt modul.yaml und erstellt AstrapiModule-Instanz
+core/ui/module_loader.py  –  Lädt modul.yaml und erstellt Module-Instanz
 
 modul.yaml liegt im Root jedes Moduls neben __init__.py:
 
@@ -19,8 +19,8 @@ import yaml
 from pathlib import Path
 
 
-def load_modul(module_dir: Path, key: str, api_router, ui_blueprint) -> "AstrapiModule":
-    from app.modules._base import AstrapiModule
+def load_modul(module_dir: Path, key: str, api_router, ui_blueprint) -> "Module":
+    from core.ui._base import Module
 
     yaml_path = module_dir / "modul.yaml"
     cfg = {}
@@ -46,7 +46,7 @@ def load_modul(module_dir: Path, key: str, api_router, ui_blueprint) -> "Astrapi
     }
     merged_defaults = {**schema_defaults, **cfg.get("settings_defaults", {})}
 
-    return AstrapiModule(
+    return Module(
         key               = key,
         label             = cfg.get("label",       key.capitalize()),
         icon              = cfg.get("icon",         "list"),

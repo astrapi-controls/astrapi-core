@@ -425,6 +425,18 @@ input,select,textarea { font-family:var(--font); }
   margin-bottom:22px;
   display:flex; align-items:center; justify-content:center; gap:8px;
 }
+/* Modal Footer – Standard (Toggle links + Buttons rechts) */
+.ds-modal-footer {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding-top:14px; margin-top:6px; border-top:1px solid var(--border-s);
+}
+/* Variante ohne Toggle: Buttons rechtsbündig */
+.ds-modal-footer--end { justify-content:flex-end; }
+/* Variante mit nur einem Schließen-Button: zentriert */
+.ds-modal-footer-simple {
+  display:flex; justify-content:center;
+  padding-top:12px; margin-top:12px; border-top:1px solid var(--border-s);
+}
 .confirm-dialog {
   background:var(--card); border:1px solid var(--border-s);
   border-radius:var(--rad-xl); box-shadow:var(--sh-m);

@@ -8,6 +8,15 @@ import subprocess
 log = logging.getLogger(__name__)
 
 
+def _notify(title: str, message: str, event: str) -> None:
+    """Sendet eine Benachrichtigung mit source='tasks'."""
+    try:
+        from core.modules.notify import engine as notify
+        notify.send(title=title, message=message, event=event, source="tasks", tags=["task"])
+    except Exception as e:
+        log.debug("tasks.run: Notify nicht verfügbar: %s", e)
+
+
 def run_tasks() -> None:
     """Führt alle aktivierten Tasks aus.
 
@@ -26,6 +35,8 @@ def run_tasks() -> None:
 
     for task_id, task in enabled.items():
         command = task.get("command", "").strip()
+        label   = task.get("label") or task.get("name") or task_id
+
         if not command:
             log.info("tasks.run: Task '%s' hat kein Kommando, übersprungen", task_id)
             continue
@@ -41,10 +52,30 @@ def run_tasks() -> None:
             )
             if result.returncode == 0:
                 log.info("tasks.run: Task '%s' erfolgreich", task_id)
+                _notify(
+                    title   = f"Task erfolgreich: {label}",
+                    message = "Erfolgreich abgeschlossen.",
+                    event   = "success",
+                )
             else:
-                log.warning("tasks.run: Task '%s' Exit-Code %d: %s",
-                            task_id, result.returncode, result.stderr[:200])
+                msg = f"Exit-Code {result.returncode}: {result.stderr[:300]}"
+                log.warning("tasks.run: Task '%s' %s", task_id, msg)
+                _notify(
+                    title   = f"Task fehlgeschlagen: {label}",
+                    message = msg,
+                    event   = "error",
+                )
         except subprocess.TimeoutExpired:
             log.error("tasks.run: Task '%s' Timeout nach 300s", task_id)
+            _notify(
+                title   = f"Task Timeout: {label}",
+                message = "Abgebrochen nach 300 Sekunden.",
+                event   = "error",
+            )
         except Exception as e:
             log.error("tasks.run: Task '%s' Fehler: %s", task_id, e)
+            _notify(
+                title   = f"Task Fehler: {label}",
+                message = str(e),
+                event   = "error",
+            )

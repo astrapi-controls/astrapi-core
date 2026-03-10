@@ -23,12 +23,14 @@ from fastapi.staticfiles import StaticFiles
 from a2wsgi import WSGIMiddleware
 
 from core.ui import create as create_ui
+from core.ui.module_registry import load_modules
 from app.api.fastapi_app import create as create_api
 
 
 def create_app() -> FastAPI:
-    api = create_api()
-    ui  = create_ui(app_root=APP_ROOT)
+    modules = load_modules(APP_ROOT)
+    api = create_api(modules=modules)
+    ui  = create_ui(app_root=APP_ROOT, modules=modules)
 
     core_static = PROJECT_ROOT / "core" / "ui" / "static"
     api.mount("/static", StaticFiles(directory=str(core_static)), name="static")

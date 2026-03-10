@@ -97,11 +97,11 @@ def scheduler_job_toggle_modal(job_id: str):
 def scheduler_job_create():
     from core.modules.scheduler.engine import create_job, get_registered_actions
 
-    job_id  = request.form.get("job_id", "").strip()
-    label   = request.form.get("label", "").strip()
-    cron    = request.form.get("cron", "").strip()
-    enabled = request.form.get("enabled") == "1"
-    steps   = request.form.getlist("steps")
+    job_id        = request.form.get("job_id", "").strip()
+    label         = request.form.get("label", "").strip()
+    cron          = request.form.get("cron", "").strip()
+    enabled       = request.form.get("enabled") == "1"
+    steps         = request.form.getlist("steps")
 
     if not job_id or not label or not cron:
         return render_template(
@@ -132,10 +132,10 @@ def scheduler_job_create():
 def scheduler_job_save(job_id: str):
     from core.modules.scheduler.engine import update_job, get_registered_actions
 
-    label   = request.form.get("label", "").strip()
-    cron    = request.form.get("cron", "").strip()
-    enabled = request.form.get("enabled") == "1"
-    steps   = request.form.getlist("steps")
+    label         = request.form.get("label", "").strip()
+    cron          = request.form.get("cron", "").strip()
+    enabled       = request.form.get("enabled") == "1"
+    steps         = request.form.getlist("steps")
 
     if not label or not cron:
         from core.modules.scheduler.engine import get_job
@@ -159,4 +159,4 @@ def scheduler_job_save(job_id: str):
 def scheduler_job_trigger(job_id: str):
     from core.modules.scheduler.engine import trigger_job
     trigger_job(job_id)
-    return render_template(f"{KEY}/partials/tab.html", **_list_ctx())
+    return render_template(f"{KEY}/partials/list.html", **_list_ctx())

@@ -42,8 +42,13 @@ def create(
     app_root:   Path,
     config:     Optional[dict] = None,
     extra_init: Optional[Callable] = None,
+    modules:    Optional[list] = None,
 ) -> Flask:
-    """Erstellt und konfiguriert die Flask-Anwendung mit Modul-Unterstützung."""
+    """Erstellt und konfiguriert die Flask-Anwendung mit Modul-Unterstützung.
+
+    modules: Vorgeladene Modulliste (z.B. aus main.py). Wird nicht neu geladen
+             wenn angegeben – verhindert doppelten Modulaufruf.
+    """
 
     core_static = CORE_ROOT / "static"
     app_static  = app_root / "static"
@@ -97,8 +102,9 @@ def create(
 
     light_mode: bool = app_cfg.get("LIGHT_MODE", False)
 
-    # ── Module laden ──────────────────────────────────────────────────────────
-    modules = load_modules(app_root)
+    # ── Module laden (nur wenn nicht bereits von außen übergeben) ─────────────
+    if modules is None:
+        modules = load_modules(app_root)
 
     # ── Einstellungs-Registry initialisieren ──────────────────────────────────
     settings_init(app_root)

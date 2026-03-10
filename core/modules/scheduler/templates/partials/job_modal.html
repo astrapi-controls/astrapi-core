@@ -8,6 +8,7 @@
     container_id – ID des Listen-Containers
     loading_id   – HTMX-Indikator
 #}
+{% from "partials/components/ui_macros.html" import modal_title, modal_footer %}
 {% set is_new = job is none or job.get('id') is none %}
 
 <div id="scheduler-job-modal"
@@ -18,20 +19,7 @@
 
   <div class="ds-modal" style="max-width:580px; padding:20px 24px;">
 
-    <div class="ds-modal-title">
-      {% if is_new %}
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Neuer Scheduler-Job
-      {% else %}
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-        Job bearbeiten
-      {% endif %}
-    </div>
+    {{ modal_title(is_edit=not is_new, title='Job bearbeiten' if not is_new else 'Neuer Scheduler-Job') }}
 
     {% if error %}
     <div style="margin-bottom:12px; padding:8px 12px; border-radius:var(--rad-lg);
@@ -46,8 +34,10 @@
           {% else %}
             hx-post="/ui/scheduler/job/{{ job.id }}/update"
           {% endif %}
-          hx-target="#{{ container_id }}"
-          hx-swap="outerHTML"
+          hx-target="#main-content"
+          hx-swap="innerHTML"
+          hx-on::before-request="if(!schedJobValidate(this)) event.preventDefault();"
+          hx-on::after-request="if(event.detail.successful){this.closest('.ds-modal-backdrop').remove()}"
           style="display:flex; flex-direction:column; gap:14px;">
 
       <!-- Job-ID (nur Neu-Anlage) -->
@@ -114,18 +104,6 @@
         </div>
       </div>
 
-      <!-- Aktiviert -->
-      <div style="display:flex; align-items:center; gap:10px;">
-        <label style="font-size:13px; color:var(--text-2);">Aktiviert</label>
-        <input type="hidden" name="enabled" value="0">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-          <input type="checkbox" name="enabled" value="1"
-                 {{ 'checked' if job and job.enabled else '' }}
-                 onchange="this.form.querySelector('[name=enabled][type=hidden]').disabled=this.checked"
-                 style="width:16px; height:16px; cursor:pointer;">
-        </label>
-      </div>
-
       <!-- Schritte -->
       <div>
         <label class="form-label" style="margin-bottom:8px;">Schritte</label>
@@ -186,17 +164,8 @@
         {% endif %}
       </div>
 
-      <!-- Footer -->
-      <div style="display:flex; justify-content:center; gap:10px; padding-top:14px; margin-top:6px;">
-        <button type="button"
-                onclick="document.getElementById('scheduler-job-modal').remove()"
-                class="btn btn-ghost btn-sm">
-          Abbrechen
-        </button>
-        <button type="button" id="sched-submit-btn" class="btn btn-primary btn-sm">
-          {{ 'Erstellen' if is_new else 'Speichern' }}
-        </button>
-      </div>
+      {{ modal_footer(enabled=job.enabled if job else False, enabled_id='sched-enabled',
+                      save_label='Erstellen' if is_new else 'Speichern') }}
 
     </form>
   </div>
@@ -287,10 +256,7 @@
 
   bindDrag();
 
-  // Validation + Submit
-  var form      = document.getElementById('scheduler-job-form');
-  var submitBtn = document.getElementById('sched-submit-btn');
-
+  // Validation
   function validateField(input) {
     var errorEl  = input.parentElement.querySelector('.form-error');
     var message  = '';
@@ -305,25 +271,18 @@
     return message === '';
   }
 
+  window.schedJobValidate = function (form) {
+    var inputs = form.querySelectorAll('input[data-required]');
+    var valid  = true;
+    inputs.forEach(function (input) { if (!validateField(input)) valid = false; });
+    return valid;
+  };
+
+  var form = document.getElementById('scheduler-job-form');
   form.querySelectorAll('input[data-required]').forEach(function (input) {
     input.addEventListener('blur', function () { validateField(input); });
     input.addEventListener('input', function () {
       if (input.classList.contains('is-invalid')) validateField(input);
-    });
-  });
-
-  submitBtn.addEventListener('click', function () {
-    var inputs = form.querySelectorAll('input[data-required]');
-    var valid  = true;
-    inputs.forEach(function (input) { if (!validateField(input)) valid = false; });
-    if (!valid) return;
-
-    htmx.trigger(form, 'submit');
-    form.addEventListener('htmx:afterRequest', function handler(e) {
-      if (e.detail.successful) {
-        document.getElementById('scheduler-job-modal')?.remove();
-      }
-      form.removeEventListener('htmx:afterRequest', handler);
     });
   });
 

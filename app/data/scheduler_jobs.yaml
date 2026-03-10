@@ -1,6 +1,8 @@
 test_01:
-  cron: 0 2 * * *
+  cron: 0 * * * *
   enabled: false
   label: Test 01
+  notify_end: true
+  notify_start: false
   steps:
   - hosts.check

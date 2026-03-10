@@ -27,15 +27,34 @@ TIMEZONE = "Europe/Berlin"
 _actions: dict[str, dict] = {}
 
 
-def register_action(key: str, label: str, fn: Callable) -> None:
+def register_action(
+    key:          str,
+    label:        str,
+    fn:           Callable,
+    source:       str | None = None,
+    source_label: str | None = None,
+) -> None:
     """Registriert eine Scheduler-Aktion.
 
+    Registriert das Modul gleichzeitig als Benachrichtigungsquelle in der
+    Notify-Engine, wenn ``source`` angegeben wird.
+
     Args:
-        key:   Eindeutiger Schlüssel, z.B. "hosts.check"
-        label: Anzeigename in der UI
-        fn:    Callable ohne Argumente
+        key:          Eindeutiger Schlüssel, z.B. "hosts.check".
+        label:        Anzeigename der Aktion in der UI, z.B. "Hosts prüfen".
+        fn:           Callable ohne Argumente.
+        source:       Quellen-Key für das Notify-System, z.B. "hosts".
+                      Wenn angegeben, wird ``register_source`` automatisch aufgerufen.
+        source_label: Anzeigename der Quelle in der Kanal-Konfiguration.
+                      Fehlt er, wird ``source`` mit großem Anfangsbuchstaben genutzt.
     """
     _actions[key] = {"label": label, "fn": fn}
+    if source:
+        try:
+            from core.modules.notify.engine import register_source as _rs
+            _rs(source, source_label or source.capitalize())
+        except Exception as e:
+            log.debug("register_action: Notify-Quelle '%s' nicht registriert: %s", source, e)
 
 
 def get_registered_actions() -> dict[str, str]:
@@ -68,11 +87,35 @@ def _get_sch() -> BackgroundScheduler:
     return _sch
 
 
+def _register_job_notify_source(job_id: str, label: str) -> None:
+    """Registriert einen Scheduler-Job als Notify-Quelle."""
+    try:
+        from core.modules.notify.engine import register_source as _rs
+        _rs(job_id, label)
+    except Exception as e:
+        log.debug("scheduler: Notify-Quelle '%s' nicht registriert: %s", job_id, e)
+
+
+def _unregister_job_notify_source(job_id: str) -> None:
+    """Entfernt einen Scheduler-Job als Notify-Quelle."""
+    try:
+        from core.modules.notify.engine import unregister_source as _us
+        _us(job_id)
+    except Exception as e:
+        log.debug("scheduler: Notify-Quelle '%s' nicht abgemeldet: %s", job_id, e)
+
+
 def init() -> None:
     """Startet den APScheduler und registriert alle konfigurierten Jobs."""
     sch = _get_sch()
     if sch.running:
         return
+    # Alle gespeicherten Jobs als Notify-Quellen registrieren
+    try:
+        for job_id, cfg in _jobs_store().list().items():
+            _register_job_notify_source(job_id, cfg.get("label", job_id))
+    except Exception as e:
+        log.debug("scheduler: Notify-Quellen beim Start nicht geladen: %s", e)
     _sync_jobs()
     sch.start()
 
@@ -118,9 +161,26 @@ def _run_job(job_id: str) -> None:
         log.warning("Job '%s' nicht gefunden", job_id)
         return
 
-    steps = cfg.get("steps", [])
-    start = time.time()
+    label        = cfg.get("label", job_id)
+    steps        = cfg.get("steps", [])
+    notify_start = cfg.get("notify_start", False)
+    notify_end   = cfg.get("notify_end",   True)
+    start        = time.time()
     errors: list[str] = []
+
+    # ── Start-Benachrichtigung ─────────────────────────────────────────────────
+    if notify_start:
+        try:
+            from core.modules.notify import engine as _notify
+            _notify.send(
+                title   = f"Job gestartet: {label}",
+                message = f"{len(steps)} Schritt(e) werden ausgeführt.",
+                event   = _notify.INFO,
+                source  = job_id,
+                tags    = ["scheduler"],
+            )
+        except Exception as _e:
+            log.debug("Notify nicht verfügbar: %s", _e)
 
     for step_key in steps:
         action = _actions.get(step_key)
@@ -144,6 +204,29 @@ def _run_job(job_id: str) -> None:
         "last_status":   status,
         "last_duration": duration,
     })
+
+    # ── Ende-Benachrichtigung ──────────────────────────────────────────────────
+    if notify_end or errors:
+        try:
+            from core.modules.notify import engine as _notify
+            if errors:
+                _notify.send(
+                    title   = f"Job fehlgeschlagen: {label}",
+                    message = f"Dauer: {duration}\n" + "\n".join(errors),
+                    event   = _notify.ERROR,
+                    source  = job_id,
+                    tags    = ["scheduler"],
+                )
+            elif notify_end:
+                _notify.send(
+                    title   = f"Job abgeschlossen: {label}",
+                    message = f"Alle Schritte erfolgreich. Dauer: {duration}",
+                    event   = _notify.SUCCESS,
+                    source  = job_id,
+                    tags    = ["scheduler"],
+                )
+        except Exception as _e:
+            log.debug("Notify nicht verfügbar: %s", _e)
 
 
 def trigger_job(job_id: str) -> None:
@@ -171,6 +254,8 @@ def _enrich(job_id: str, cfg: dict) -> dict:
         "cron":          cfg.get("cron", ""),
         "enabled":       cfg.get("enabled", False),
         "steps":         cfg.get("steps", []),
+        "notify_start":  cfg.get("notify_start", False),
+        "notify_end":    cfg.get("notify_end",   True),
         "next_run":      next_run,
         "last_run":      status.get("last_run", ""),
         "last_status":   status.get("last_status", ""),
@@ -191,25 +276,33 @@ def get_job(job_id: str) -> dict | None:
     return _enrich(job_id, cfg) if cfg else None
 
 
-def create_job(job_id: str, label: str, cron: str, enabled: bool, steps: list[str]) -> dict:
+def create_job(job_id: str, label: str, cron: str, enabled: bool, steps: list[str],
+               notify_start: bool = False, notify_end: bool = True) -> dict:
     _jobs_store().create(job_id, {
-        "label":   label,
-        "cron":    cron,
-        "enabled": enabled,
-        "steps":   steps,
+        "label":        label,
+        "cron":         cron,
+        "enabled":      enabled,
+        "steps":        steps,
+        "notify_start": notify_start,
+        "notify_end":   notify_end,
     })
+    _register_job_notify_source(job_id, label)
     if _get_sch().running:
         _sync_jobs()
     return _enrich(job_id, _jobs_store().get(job_id))
 
 
-def update_job(job_id: str, label: str, cron: str, enabled: bool, steps: list[str]) -> dict:
+def update_job(job_id: str, label: str, cron: str, enabled: bool, steps: list[str],
+               notify_start: bool = False, notify_end: bool = True) -> dict:
     _jobs_store().update(job_id, {
-        "label":   label,
-        "cron":    cron,
-        "enabled": enabled,
-        "steps":   steps,
+        "label":        label,
+        "cron":         cron,
+        "enabled":      enabled,
+        "steps":        steps,
+        "notify_start": notify_start,
+        "notify_end":   notify_end,
     })
+    _register_job_notify_source(job_id, label)  # Label ggf. aktualisiert
     if _get_sch().running:
         _sync_jobs()
     return _enrich(job_id, _jobs_store().get(job_id))
@@ -217,6 +310,7 @@ def update_job(job_id: str, label: str, cron: str, enabled: bool, steps: list[st
 
 def delete_job(job_id: str) -> None:
     _jobs_store().delete(job_id)
+    _unregister_job_notify_source(job_id)
     try:
         _status_store().delete(job_id)
     except KeyError:

@@ -7,8 +7,18 @@ module.hosts (Kopie).default_user: root
 module.hosts.connect_timeout: '10'
 module.hosts.default_port: '22'
 module.hosts.default_user: root
+module.hosts.notify_host_down: '0'
+module.hosts.notify_host_up: '0'
+module.notify.backend: ntfy
+module.notify.enabled: '0'
+module.notify.events: error
+module.notify.ntfy_token: ''
+module.notify.ntfy_topic: backup-neu
+module.notify.ntfy_url: https://ntfy.sh
 module.tasks.default_schedule: 0 2 * * *
 module.tasks.max_retries: '3'
+module.tasks.notify_task_error: 'true'
+module.tasks.notify_task_success: 'false'
 module.tasks.timeout: '300'
 module.test.connect_timeout: '10'
 module.test.default_port: '22'
