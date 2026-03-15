@@ -81,6 +81,13 @@ _CARD_ACTION_TYPES: dict[str, dict] = {
         "hx_swap":         "beforeend",
         "disabled_if_off": True,
     },
+    "preview": {
+        "title":    "Befehlsvorschau",
+        "icon":     "eye",
+        "hx_get":   "/api/{module}/{item}/preview",
+        "hx_target":"body",
+        "hx_swap":  "beforeend",
+    },
 }
 
 _POST_TYPES = {"run", "run_debug"}

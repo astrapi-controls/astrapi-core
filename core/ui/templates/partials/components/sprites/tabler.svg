@@ -279,6 +279,11 @@
     </g>
   </symbol>
 
+  <symbol id="icon-eye" viewBox="0 0 24 24">
+    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+    <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </symbol>
   <symbol id="icon-info" viewBox="0 0 24 24">
     <g stroke-linecap="round" stroke-linejoin="round">
       <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/>
