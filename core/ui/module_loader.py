@@ -3,13 +3,13 @@ core/ui/module_loader.py  –  Lädt modul.yaml und erstellt Module-Instanz
 
 modul.yaml liegt im Root jedes Moduls neben __init__.py:
 
-  label:       Hosts
-  icon:        server
-  nav_group:   Module
-  nav_default: true
+  label: Hosts
+  icon:  server
 
   settings_defaults:
     default_port: "22"
+
+Navigation (Reihenfolge, Gruppe) wird ausschließlich über app/config.yaml gesteuert.
 """
 
 import yaml

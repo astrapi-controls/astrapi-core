@@ -32,7 +32,7 @@
     {% endset %}
 
     {% set toggle_html %}
-      <!-- Hosts haben hier keinen Toggle Switch im Header -->
+      {{ ui.toggle_switch(module=key, item=item_id, container_id=container_id, loading_id=loading_id, enabled=item.get('enabled', True), description=item.description) }}
     {% endset %}
 
     {% set footer_left %}

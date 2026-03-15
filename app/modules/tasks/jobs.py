@@ -41,6 +41,12 @@ def run_tasks() -> None:
             log.info("tasks.run: Task '%s' hat kein Kommando, übersprungen", task_id)
             continue
 
+        try:
+            from core.ui.settings_registry import get as _srget
+            timeout = int(_srget("module.tasks.timeout") or 300)
+        except Exception:
+            timeout = 300
+
         log.info("tasks.run: Task '%s' → %s", task_id, command)
         try:
             result = subprocess.run(
@@ -48,7 +54,7 @@ def run_tasks() -> None:
                 shell=True,
                 capture_output=True,
                 text=True,
-                timeout=300,
+                timeout=timeout,
             )
             if result.returncode == 0:
                 log.info("tasks.run: Task '%s' erfolgreich", task_id)
@@ -66,10 +72,10 @@ def run_tasks() -> None:
                     event   = "error",
                 )
         except subprocess.TimeoutExpired:
-            log.error("tasks.run: Task '%s' Timeout nach 300s", task_id)
+            log.error("tasks.run: Task '%s' Timeout nach %ds", task_id, timeout)
             _notify(
                 title   = f"Task Timeout: {label}",
-                message = "Abgebrochen nach 300 Sekunden.",
+                message = f"Abgebrochen nach {timeout} Sekunden.",
                 event   = "error",
             )
         except Exception as e:

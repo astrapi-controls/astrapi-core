@@ -14,8 +14,7 @@
 #}
 <div id="settings-modal-backdrop" class="ds-modal-backdrop"
      x-data
-     x-on:keydown.escape.window="$el.remove()"
-     x-on:click.self="$el.remove()">
+     x-on:keydown.escape.window="$el.remove()">
 
   <div class="ds-modal" style="width:480px; max-width:95vw; padding:24px 28px;" tabindex="-1"
        id="settings-modal">
@@ -24,8 +23,7 @@
 
     <!-- Flash -->
     {% if saved %}
-    <div style="margin-bottom:14px; padding:8px 12px; border-radius:var(--rad);
-                background:rgba(74,222,128,0.10); color:#4ade80; font-size:13px;">
+    <div class="alert alert-success" style="margin-bottom:14px;">
       ✔ Einstellungen gespeichert.
     </div>
     {% endif %}
@@ -34,7 +32,7 @@
     <form hx-post="/ui/{{ mod.key }}/settings"
           hx-target="#settings-modal"
           hx-swap="outerHTML"
-          style="display:flex; flex-direction:column; gap:14px;">
+          class="form-stack" style="gap:14px;">
 
       {% for field in schema %}
       {% set fkey  = field.key %}
@@ -56,13 +54,13 @@
         </select>
 
         {% elif ftype == 'checkbox' %}
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding-top:4px;">
+        <label class="toggle-field" style="padding-top:4px;">
           <input type="hidden" name="{{ fkey }}" value="0">
           <input type="checkbox" name="{{ fkey }}" value="1"
                  style="width:16px; height:16px;"
                  {{ 'checked' if fval in (True, '1', 'true', 'on') }}
                  onchange="this.form.querySelector('[name={{ fkey }}][type=hidden]').disabled=this.checked">
-          <span style="font-size:13px; color:var(--text-2);">{{ field.get('checkbox_label', 'Aktiviert') }}</span>
+          <span class="toggle-field-label">{{ field.get('checkbox_label', 'Aktiviert') }}</span>
         </label>
 
         {% elif ftype == 'textarea' %}
@@ -84,7 +82,7 @@
         {% endif %}
 
         {% if field.get('description') %}
-        <span style="font-size:11px; color:var(--text-3); margin-top:3px; display:block;">
+        <span class="form-help">
           {{ field.description }}
         </span>
         {% endif %}

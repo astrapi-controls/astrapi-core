@@ -19,7 +19,6 @@
   class="ds-modal-backdrop"
   x-data
   x-on:keydown.escape.window="$el.remove()"
-  x-on:click.self="$el.remove()"
 >
   <div class="ds-modal" style="max-width:620px; padding:20px 24px;">
 
@@ -30,7 +29,7 @@
       hx-target="#main-content"
       hx-swap="innerHTML"
       hx-indicator="#{{ loading_id }}"
-      style="display:flex; flex-direction:column; gap:14px;"
+      class="form-stack" style="gap:14px;"
     >
 
       {# ── ID-Feld (nur beim Anlegen) ─────────────────────────────────────── #}

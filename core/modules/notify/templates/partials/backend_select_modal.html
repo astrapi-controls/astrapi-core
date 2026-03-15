@@ -88,7 +88,6 @@
   class="ds-modal-backdrop"
   x-data
   x-on:keydown.escape.window="$el.remove()"
-  x-on:click.self="$el.remove()"
 >
   <div class="confirm-dialog" style="max-width:{{ '500px' if total_backends == 2 else '420px' }};">
 

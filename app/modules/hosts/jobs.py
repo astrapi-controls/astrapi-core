@@ -33,6 +33,12 @@ def check_hosts() -> None:
         log.info("hosts.check: Keine aktivierten Hosts")
         return
 
+    try:
+        from core.ui.settings_registry import get as _srget
+        connect_timeout = int(_srget("module.hosts.connect_timeout") or 10)
+    except Exception:
+        connect_timeout = 10
+
     for host_id, host in enabled.items():
         ip            = host.get("ip", "").strip()
         port          = int(host.get("port", 22))
@@ -44,7 +50,7 @@ def check_hosts() -> None:
             continue
 
         try:
-            with socket.create_connection((ip, port), timeout=5):
+            with socket.create_connection((ip, port), timeout=connect_timeout):
                 reachable = True
         except OSError:
             reachable = False
