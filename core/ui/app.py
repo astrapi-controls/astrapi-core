@@ -331,6 +331,7 @@ def _register_module_settings_routes(app: Flask, modules: list) -> None:
             field["key"]: get_module(module_key, field["key"],
                                      field.get("default", ""))
             for field in mod.settings_schema
+            if "key" in field
         }
         return render_template(
             "partials/settings_modal.html",
