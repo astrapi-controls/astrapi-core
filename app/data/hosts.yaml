@@ -1,6 +1,6 @@
 db-01:
   description: Datenbank-Server1
-  enabled: false
+  enabled: true
   ip: 192.168.1.20
   port: '5432'
   tags: database, production

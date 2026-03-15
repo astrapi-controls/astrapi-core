@@ -1,6 +1,6 @@
 '111':
   backend: ntfy
-  enabled: true
+  enabled: false
   events:
   - error
   label: ntfy - backup-neu
