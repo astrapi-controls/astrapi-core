@@ -297,6 +297,38 @@ def build_nav_items(modules: list, app_root: Path) -> list[dict]:
     return items
 
 
+def list_available_core_modules() -> list:
+    """Gibt alle verfügbaren Core-Module mit key, label und enabled-Status zurück.
+
+    Liest die modul.yaml für den Anzeigenamen. Der enabled-Status kommt aus der
+    Settings-Registry (core.module.<key>.enabled != '0' → aktiv).
+    """
+    import yaml as _yaml
+    try:
+        from core.ui.settings_registry import get as _settings_get
+    except Exception:
+        def _settings_get(k, d=None): return d
+
+    result = []
+    if not CORE_MOD_DIR.exists():
+        return result
+    for entry in sorted(CORE_MOD_DIR.iterdir()):
+        if not entry.is_dir() or entry.name.startswith("_"):
+            continue
+        key = entry.name
+        enabled = _settings_get(f"core.module.{key}.enabled", "1") != "0"
+        label = key.replace("_", " ").title()
+        modul_yaml = entry / "modul.yaml"
+        if modul_yaml.exists():
+            try:
+                data = _yaml.safe_load(modul_yaml.read_text(encoding="utf-8")) or {}
+                label = data.get("label", label)
+            except Exception:
+                pass
+        result.append({"key": key, "label": label, "enabled": enabled})
+    return result
+
+
 def _set_default(items: list[dict]) -> None:
     """Setzt das erste Non-Separator-Item als Default wenn keines gesetzt ist."""
     if not any(not i.get("separator") and i.get("default") for i in items):
