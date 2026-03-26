@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 def _notify(title: str, message: str, event: str) -> None:
     """Sendet eine Benachrichtigung mit source='hosts'."""
     try:
-        from core.modules.notify import engine as notify
+        from astrapi.core.modules.notify import engine as notify
         notify.send(title=title, message=message, event=event, source="hosts", tags=["host"])
     except Exception as e:
         log.debug("hosts.check: Notify nicht verfügbar: %s", e)
@@ -34,7 +34,7 @@ def check_hosts() -> None:
         return
 
     try:
-        from core.ui.settings_registry import get as _srget
+        from astrapi.core.ui.settings_registry import get as _srget
         connect_timeout = int(_srget("module.hosts.connect_timeout") or 10)
     except Exception:
         connect_timeout = 10

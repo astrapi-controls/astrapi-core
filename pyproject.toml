@@ -9,4 +9,4 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]   # kein weiterer Inhalt nötig
 
 [tool.setuptools.packages.find]
-include = ["core*"]
+include = ["astrapi*"]

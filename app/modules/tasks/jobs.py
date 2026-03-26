@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 def _notify(title: str, message: str, event: str) -> None:
     """Sendet eine Benachrichtigung mit source='tasks'."""
     try:
-        from core.modules.notify import engine as notify
+        from astrapi.core.modules.notify import engine as notify
         notify.send(title=title, message=message, event=event, source="tasks", tags=["task"])
     except Exception as e:
         log.debug("tasks.run: Notify nicht verfügbar: %s", e)
@@ -42,7 +42,7 @@ def run_tasks() -> None:
             continue
 
         try:
-            from core.ui.settings_registry import get as _srget
+            from astrapi.core.ui.settings_registry import get as _srget
             timeout = int(_srget("module.tasks.timeout") or 300)
         except Exception:
             timeout = 300
