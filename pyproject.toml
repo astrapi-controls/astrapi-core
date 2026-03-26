@@ -4,7 +4,7 @@ dynamic = ["version"]   # Version kommt aus Git
 
 [build-system]
 requires = ["setuptools>=61", "setuptools-scm"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]   # kein weiterer Inhalt nötig
 
