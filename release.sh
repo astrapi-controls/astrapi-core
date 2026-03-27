@@ -40,6 +40,12 @@ if git tag | grep -qx "$TAG"; then
     exit 1
 fi
 
+EXISTING_TAG="$(git tag --points-at HEAD | head -1)"
+if [[ -n "$EXISTING_TAG" ]]; then
+    echo "Fehler: HEAD hat bereits Tag '$EXISTING_TAG'. Bitte erst committen." >&2
+    exit 1
+fi
+
 # ── Tag setzen und pushen ──────────────────────────────────────────────────────
 echo "→ Setze Tag $TAG …"
 git tag "$TAG"
