@@ -77,6 +77,7 @@ def add_work_dir_argument(parser) -> None:
     )
 
 
-def apply_work_dir_argument(args) -> None:
-    """Setzt die Env-Variable aus dem geparsten argparse-Namespace."""
+def apply_work_dir_argument(args, app_name: str) -> None:
+    """Konfiguriert app_name und setzt die Env-Variable aus dem argparse-Namespace."""
+    configure(app_name)
     os.environ[_env_var()] = args.work_dir
