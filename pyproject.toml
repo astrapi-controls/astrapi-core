@@ -6,7 +6,8 @@ dynamic = ["version"]   # Version kommt aus Git
 requires = ["setuptools>=61", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]   # kein weiterer Inhalt nötig
+[tool.setuptools_scm]
+version_scheme = "astrapi.core.system._version_scheme:calver_next"
 
 [tool.setuptools.packages.find]
 include = ["astrapi*"]
