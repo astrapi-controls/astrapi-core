@@ -31,6 +31,8 @@
     {% if cfg and has_run_buttons | default(True) %}
     {% endif %}
 
+    {% if extra_page_actions_template %}{% include extra_page_actions_template ignore missing %}{% endif %}
+
     {% if has_create | default(True) %}
     {{ ui.add_button(module=module, container_id=container_id, loading_id=loading_id) }}
     {% endif %}

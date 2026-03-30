@@ -43,6 +43,7 @@ def make_crud_blueprint(
     has_run_buttons: bool = False,
     has_toggle: bool = True,
     resolve_fields_fn: Callable[[list], list] | None = None,
+    extra_page_actions_template: str | None = None,
 ) -> Blueprint:
     """Erstellt einen generischen CRUD-Blueprint für Flask.
 
@@ -77,7 +78,7 @@ def make_crud_blueprint(
     bp = Blueprint(f"{key}_ui", __name__)
 
     def _ctx(**extra):
-        return dict(
+        ctx = dict(
             cfg=store.list(),
             module=key,
             container_id=_c_id,
@@ -85,8 +86,11 @@ def make_crud_blueprint(
             content_template=f"{key}/partials/list.html",
             running={},
             has_run_buttons=has_run_buttons,
-            **extra,
         )
+        if extra_page_actions_template:
+            ctx["extra_page_actions_template"] = extra_page_actions_template
+        ctx.update(extra)
+        return ctx
 
     def _resolved_fields() -> list:
         fields = schema["fields"]
