@@ -22,13 +22,18 @@ Verwendung:
     # @router.post("/{item_id}/run", ...)
 """
 
-from typing import Type
+from typing import Callable, Optional, Type
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 
-def make_crud_router(store, key: str, ItemIn: Type[BaseModel]) -> APIRouter:
+def make_crud_router(
+    store,
+    key: str,
+    ItemIn: Type[BaseModel],
+    on_delete: Optional[Callable[[str, dict], None]] = None,
+) -> APIRouter:
     """Erstellt einen generischen CRUD-Router für FastAPI.
 
     Args:
@@ -80,6 +85,14 @@ def make_crud_router(store, key: str, ItemIn: Type[BaseModel]) -> APIRouter:
 
     @router.delete("/{item_id}", summary=f"Delete {label_s}", status_code=204)
     def delete_item(item_id: str):
+        item = store.get(item_id)
+        if item is None:
+            raise HTTPException(404, f"{label_s} '{item_id}' nicht gefunden")
+        if on_delete:
+            try:
+                on_delete(item_id, item)
+            except Exception as e:
+                raise HTTPException(500, f"Cleanup fehlgeschlagen: {e}")
         try:
             store.delete(item_id)
         except KeyError as e:

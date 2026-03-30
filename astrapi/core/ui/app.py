@@ -109,8 +109,9 @@ def create(
     light_mode: bool = app_cfg.get("LIGHT_MODE", False)
 
     # ── Module laden (nur wenn nicht bereits von außen übergeben) ─────────────
+    failed_module_keys: set = set()
     if modules is None:
-        modules = load_modules(app_root)
+        modules, failed_module_keys = load_modules(app_root)
 
     # ── Einstellungs-Registry initialisieren ──────────────────────────────────
     settings_init(app_root)
@@ -124,7 +125,7 @@ def create(
     global_defaults.setdefault("APP_ICON_THEME",  app_cfg.get("APP_ICON_THEME", "lucide"))
     global_defaults.setdefault("TIMEZONE",        "Europe/Berlin")
     global_defaults.setdefault("DATE_FORMAT",     "DD.MM.YYYY")
-    seed_defaults(global_defaults, modules)
+    seed_defaults(global_defaults, modules, failed_module_keys)
 
     app.config["LOADED_MODULES"] = modules
 

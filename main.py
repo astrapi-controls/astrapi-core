@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
     create_all_registered_tables()
 
     settings_init(APP_ROOT)
-    modules = load_modules(APP_ROOT)
+    modules, _ = load_modules(APP_ROOT)
 
     api = FastAPI(
         title=get_display_name(APP_ROOT) + " API",

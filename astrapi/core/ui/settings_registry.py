@@ -129,8 +129,19 @@ class SettingsRegistry:
         with self._lock:
             return self._load()
 
-    def seed_defaults(self, global_defaults: dict, modules: list) -> None:
-        """Füllt fehlende Werte mit Defaults auf und bereinigt verwaiste Modul-Keys."""
+    def seed_defaults(
+        self,
+        global_defaults: dict,
+        modules: list,
+        failed_module_keys: "set[str] | None" = None,
+    ) -> None:
+        """Füllt fehlende Werte mit Defaults auf und bereinigt verwaiste Modul-Keys.
+
+        failed_module_keys: Modulnamen die beim Laden fehlgeschlagen sind.
+            Ihre Settings-Keys werden NICHT als verwaist behandelt, damit ein
+            temporärer Ladefehler keine gespeicherten Einstellungen löscht.
+        """
+        protected = failed_module_keys or set()
         with self._lock:
             current = self._load()
             to_add: dict = {}
@@ -149,11 +160,13 @@ class SettingsRegistry:
                 self._save_many(to_add)
                 current.update(to_add)
 
-            # Verwaiste Modul-Keys entfernen
+            # Verwaiste Modul-Keys entfernen – fehlgeschlagene Module ausnehmen
             known = {mod.key for mod in modules}
             orphaned = [
                 k for k in current
-                if k.startswith("module.") and k.split(".")[1] not in known
+                if k.startswith("module.")
+                and k.split(".")[1] not in known
+                and k.split(".")[1] not in protected
             ]
             for k in orphaned:
                 self._delete_one(k)

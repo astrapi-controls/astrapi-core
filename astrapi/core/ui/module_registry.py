@@ -64,13 +64,18 @@ _mod_registry: dict = _instance._registry
 
 # ── Laden ─────────────────────────────────────────────────────────────────────
 
-def _load_from_dir(modules_dir: Path, pkg_prefix: str) -> dict:
-    """Lädt alle Module-Instanzen aus einem Verzeichnis → {key: instance}."""
+def _load_from_dir(modules_dir: Path, pkg_prefix: str) -> tuple[dict, set[str]]:
+    """Lädt alle Module-Instanzen aus einem Verzeichnis.
+
+    Returns:
+        (found, failed) – found: {key: instance}, failed: Modulnamen die nicht geladen wurden
+    """
     from astrapi.core.ui._base import Module
 
     found: dict[str, Module] = {}
+    failed: set[str] = set()
     if not modules_dir.exists():
-        return found
+        return found, failed
 
     for entry in sorted(modules_dir.iterdir()):
         if entry.name.startswith("_"):
@@ -100,6 +105,7 @@ def _load_from_dir(modules_dir: Path, pkg_prefix: str) -> dict:
             instance = getattr(mod, "module", None)
             if instance is None or not isinstance(instance, Module):
                 warnings.warn(f"Modul '{name}' ({pkg_prefix}): keine Module-Instanz gefunden")
+                failed.add(name)
                 continue
             if mod_root is not None:
                 # module_root nur setzen wenn dieses Verzeichnis Templates hat
@@ -116,8 +122,9 @@ def _load_from_dir(modules_dir: Path, pkg_prefix: str) -> dict:
             found[instance.key] = instance
         except Exception as e:
             warnings.warn(f"Modul '{name}' ({pkg_prefix}) konnte nicht geladen werden: {e}")
+            failed.add(name)
 
-    return found
+    return found, failed
 
 
 def load_modules(app_root: Path) -> list:
@@ -132,9 +139,10 @@ def load_modules(app_root: Path) -> list:
     Core-Module können per Einstellung deaktiviert werden:
       core.module.<key>.enabled = "0"  →  Modul wird nicht geladen
     """
-    core_mods = _load_from_dir(CORE_MOD_DIR,              "core.modules")
-    ext_mods  = _load_from_dir(app_root / "overrides",   "app.overrides")
-    app_mods  = _load_from_dir(app_root / "modules",      "app.modules")
+    core_mods, core_failed = _load_from_dir(CORE_MOD_DIR,            "core.modules")
+    ext_mods,  ext_failed  = _load_from_dir(app_root / "overrides", "app.overrides")
+    app_mods,  app_failed  = _load_from_dir(app_root / "modules",   "app.modules")
+    failed_keys: set[str]  = core_failed | ext_failed | app_failed
 
     # Deaktivierte Core-Module herausfiltern (Einstellung: core.module.<key>.enabled != "0")
     try:
@@ -166,7 +174,7 @@ def load_modules(app_root: Path) -> list:
         if key not in seen:
             ordered.append(merged[key]); seen.add(key)
     _instance.update({m.key: m for m in ordered})
-    return ordered
+    return ordered, failed_keys
 
 
 # ── Registrieren ──────────────────────────────────────────────────────────────
