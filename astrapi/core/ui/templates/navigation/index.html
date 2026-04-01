@@ -1,5 +1,5 @@
 {% macro svg_icon(name) -%}
-<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<svg class="nav-icon" fill="currentColor">
   <use href="#icon-{{ name if name else 'default' }}"></use>
 </svg>
 {%- endmacro %}

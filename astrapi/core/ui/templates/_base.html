@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ app_lang | default('de') }}" class="{{ 'light-mode' if light_mode else '' }}" data-icon-theme="{{ icon_theme }}">
+<html lang="{{ app_lang | default('de') }}" class="{{ 'light-mode' if light_mode else '' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,7 +22,8 @@
 </head>
 <body>
 
-{% include "partials/components/sprites/" ~ icon_theme ~ ".svg" %}
+{% include "partials/components/sprites/icons.svg" %}
+{% include "partials/components/sprites/app-icons.svg" ignore missing %}
 
 {% block content %}{% endblock %}
 

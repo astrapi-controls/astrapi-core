@@ -183,7 +183,7 @@ input,select,textarea { font-family:var(--font); }
   color: var(--text);
 }
 .light-mode .nav-item.active .nav-icon { color:var(--text); }
-.nav-icon { width:16px; height:16px; flex-shrink:0; opacity:0.85; transition:opacity var(--t); }
+.nav-icon { width:20px; height:20px; flex-shrink:0; opacity:0.85; transition:opacity var(--t); }
 .nav-item:hover .nav-icon { opacity:0.9; }
 .nav-item.active .nav-icon { opacity:1; }
 

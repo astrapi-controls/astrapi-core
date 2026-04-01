@@ -14,10 +14,12 @@
 
 - key:   scheduler
   label: Scheduler
+  icon:  calendar
   group: System
 
 - key:   sysinfo
   label: Info
+  icon:  info
   group: System
 
 - key:   settings

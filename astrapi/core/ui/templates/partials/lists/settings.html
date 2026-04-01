@@ -38,15 +38,6 @@
                 </select>
                 <div class="form-hint">Wird sofort und dauerhaft übernommen.</div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Icon-Theme</label>
-                <select class="form-select" name="APP_ICON_THEME">
-                  {% for val, label in [('lucide','Lucide'), ('heroicons','Heroicons'), ('tabler','Tabler')] %}
-                  <option value="{{ val }}" {{ 'selected' if settings.get('APP_ICON_THEME', 'lucide') == val }}>{{ label }}</option>
-                  {% endfor %}
-                </select>
-                <div class="form-hint">Steuert Strichstärke und Kantenrundung aller Icons. Wird nach dem Speichern neu geladen.</div>
-              </div>
             </div>
           </div>
         </div>
@@ -105,18 +96,12 @@
 
   </form>
 
-{# Erscheinungsbild + Icon-Theme sofort anwenden nach HTMX-Swap #}
+{# Erscheinungsbild sofort anwenden nach HTMX-Swap #}
   <script>
     (function() {
       var lm = '{{ settings.get("LIGHT_MODE", "0") }}';
       document.documentElement.classList.toggle('light-mode', lm === '1');
       localStorage.setItem('lightMode', lm);
-
-      var newTheme = '{{ icon_theme }}';
-      var curTheme = document.documentElement.dataset.iconTheme || 'lucide';
-      if (newTheme !== curTheme) {
-        window.location.reload();
-      }
     })();
   </script>
 
