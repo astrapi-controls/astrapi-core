@@ -39,6 +39,9 @@
 
   <!-- Footer -->
   <div class="sb-footer">
+    <button class="btn-theme" id="btn-theme-toggle" style="margin-left:auto; display:flex;" onclick="toggleDarkMode()" title="Erscheinungsbild">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use id="theme-toggle-icon" href="#icon-moon"></use></svg>
+    </button>
     <hr class="sb-divider">
     <div class="sb-footer-bottom">
       <div class="sb-versions">
@@ -65,21 +68,14 @@
     });
   });
 
-(function() {
-  function updateThemeIcon() {
-    const isLight = document.documentElement.classList.contains('light-mode');
-    document.getElementById('icon-moon').style.display = isLight ? 'block' : 'none';
-    document.getElementById('icon-sun').style.display  = isLight ? 'none'  : 'block';
-  }
-  updateThemeIcon();
-  const orig = window.toggleDarkMode;
-  window.toggleDarkMode = function() {
-    if (orig) orig();
-    else {
-      document.documentElement.classList.toggle('light-mode');
-      localStorage.setItem('lightMode', document.documentElement.classList.contains('light-mode') ? '1' : '0');
-    }
-    updateThemeIcon();
-  };
-})();
+function _updateThemeIcon() {
+  var use = document.getElementById('theme-toggle-icon');
+  if (use) use.setAttribute('href', document.documentElement.classList.contains('light-mode') ? '#icon-sun' : '#icon-moon');
+}
+window.toggleDarkMode = function() {
+  document.documentElement.classList.toggle('light-mode');
+  localStorage.setItem('lightMode', document.documentElement.classList.contains('light-mode') ? '1' : '0');
+  _updateThemeIcon();
+};
+_updateThemeIcon();
 </script>

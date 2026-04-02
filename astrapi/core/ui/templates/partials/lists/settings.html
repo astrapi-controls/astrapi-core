@@ -22,28 +22,9 @@
         hx-target="#settings-container"
         hx-swap="outerHTML">
 
-    {# ── Zwei-Spalten-Layout: Darstellung | Lokalisierung ──────────────────── #}
-    <div class="settings-form-grid settings-form-grid--2col" style="align-items:start;">
+    {# ── Lokalisierung ──────────────────────────────────────────────────────── #}
+    <div class="settings-form-grid" style="align-items:start;">
 
-      {# ── Darstellung ─────────────────────────────────────────────────────── #}
-      <div>
-        <div class="ds-card on">
-          <div class="card-body" style="padding:16px;">
-            <div style="display:flex; flex-direction:column; gap:14px;">
-              <div class="form-group">
-                <label class="form-label">Erscheinungsbild</label>
-                <select class="form-select" name="LIGHT_MODE">
-                  <option value="0" {{ 'selected' if settings.get('LIGHT_MODE', '0') != '1' }}>Dunkel</option>
-                  <option value="1" {{ 'selected' if settings.get('LIGHT_MODE', '0') == '1' }}>Hell</option>
-                </select>
-                <div class="form-hint">Wird sofort und dauerhaft übernommen.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {# ── Lokalisierung ───────────────────────────────────────────────────── #}
       <div>
         <div class="ds-card on">
           <div class="card-body" style="padding:16px;">
@@ -87,7 +68,7 @@
         </div>
       </div>
 
-    </div>{# ── Ende Zwei-Spalten ──────────────────────────────────────────────────── #}
+    </div>{# ── Ende Lokalisierung ──────────────────────────────────────────────── #}
 
     {# ── Speichern ─────────────────────────────────────────────────────────── #}
     <div class="form-actions" style="padding-bottom:4px;">
@@ -95,15 +76,6 @@
     </div>
 
   </form>
-
-{# Erscheinungsbild sofort anwenden nach HTMX-Swap #}
-  <script>
-    (function() {
-      var lm = '{{ settings.get("LIGHT_MODE", "0") }}';
-      document.documentElement.classList.toggle('light-mode', lm === '1');
-      localStorage.setItem('lightMode', lm);
-    })();
-  </script>
 
   {# ── Core-Module ─────────────────────────────────────────────────────────── #}
   {% set toggleable_core_mods = core_module_list | selectattr('key', '!=', 'settings') | list %}

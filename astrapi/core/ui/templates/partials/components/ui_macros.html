@@ -11,14 +11,14 @@
 {% macro edit_button(module=None, item=None, container_id=None, loading_id=None) %}
   <button hx-get="/ui/{{ module }}/{{ item }}/edit?container_id={{ container_id }}&loading_id={{ loading_id }}"
     hx-target="body" hx-swap="beforeend" class="btn-icon" title="Bearbeiten">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-edit"></use></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-edit"></use></svg>
   </button>
 {% endmacro %}
 
 {% macro delete_button(module=None, item=None, container_id=None, loading_id=None, description=None) %}
   <button hx-get="/ui/{{ module }}/{{ item }}/delete?container_id={{ container_id }}&loading_id={{ loading_id }}&description={{ description }}"
     hx-target="body" hx-swap="beforeend" class="btn-icon btn-icon-danger" title="Löschen">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-trash"></use></svg>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-trash"></use></svg>
   </button>
 {% endmacro %}
 
@@ -41,7 +41,7 @@
     hx-target="body" hx-swap="beforeend"
     class="btn btn-primary btn-sm" title="Neu"
   >
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-plus"></use></svg>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-plus"></use></svg>
     Neu
   </button>
 {% endmacro %}
@@ -71,7 +71,7 @@
     hx-indicator="#{{ loading_id }}"
     class="btn-icon" title="Aktualisieren"
   >
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-refresh-lg"></use></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-refresh-lg"></use></svg>
   </button>
 {% endmacro %}
 
@@ -88,7 +88,7 @@
     title="{{ 'Ausführen' if enabled else 'Deaktiviert – nur Debug-Run möglich' }}"
     {% if not enabled %}disabled{% endif %}
   >
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-play"></use></svg>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-play"></use></svg>
   </button>
 {% endmacro %}
 
@@ -100,7 +100,7 @@
     class="btn-icon btn-icon-debug"
     title="Ausführen (Debug)"
   >
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-play-debug"></use></svg>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-play-debug"></use></svg>
   </button>
 {% endmacro %}
 
@@ -111,7 +111,7 @@
     hx-target="body" hx-swap="beforeend"
     class="btn-icon" title="Einstellungen"
   >
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-settings"></use></svg>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-settings"></use></svg>
   </button>
 {% endmacro %}
 
@@ -122,7 +122,7 @@
     class="btn-icon btn-icon-log"
     title="Log anzeigen"
   >
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-file-text"></use></svg>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-file-text"></use></svg>
   </button>
 {% endmacro %}
 
@@ -171,7 +171,7 @@
   {{ title }}
 </div>
 <button type="button" class="ds-modal-close" x-on:click="$el.closest('.ds-modal-backdrop').remove()">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-close"></use></svg>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-close"></use></svg>
 </button>
 {% endmacro %}
 
@@ -244,7 +244,7 @@
                   external-link, info, refresh
 #}
 {% macro icon(name) -%}
-<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-{{ name }}"></use></svg>
+<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><use href="#icon-{{ name }}"></use></svg>
 {%- endmacro %}
 
 {#
