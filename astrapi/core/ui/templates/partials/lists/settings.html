@@ -13,7 +13,8 @@
 
   <div class="section-stack">
 
-  {# ── Update ───────────────────────────────────────────────────────────────── #}
+  {# ── Update (nur wenn nicht bereits in Sysinfo eingebettet) ──────────────── #}
+  {% if not updater_in_sysinfo %}
   <div>
     <div class="ds-card on">
       <div class="card-body" style="padding:16px;">
@@ -29,6 +30,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 
   {% if flash_message %}
   <div class="alert alert-info" style="margin-bottom:14px;">

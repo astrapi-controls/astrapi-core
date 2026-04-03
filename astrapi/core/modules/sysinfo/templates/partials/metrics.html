@@ -1,7 +1,8 @@
+{% import 'partials/components/ui_macros.html' as ui %}
 <div data-collected-at="{{ info.collected_at }}">
 
 {# ── Gauges: CPU / RAM / Swap / Disk ──────────────────────────────── #}
-<div class="sysinfo-gauges" style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px;">
+<div class="sysinfo-gauges" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:16px;">
 
   {# CPU #}
   <div class="ds-card on" style="padding:16px 18px;">
@@ -70,60 +71,52 @@
   </div>
   {% endif %}
 
+  {# Extra-Disks (projektspezifisch via configure(extra_disks=[...])) #}
+  {% for ed in info.extra_disks %}
+  <div class="ds-card on" style="padding:16px 18px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-3); font-weight:600;">{{ ed.label }}</div>
+      <div style="font-size:24px; font-weight:700; color:var(--text);">{{ ed.percent }}<span style="font-size:14px; color:var(--text-3);">%</span></div>
+    </div>
+    <div style="height:8px; background:var(--sel); border-radius:99px; overflow:hidden;">
+      <div style="height:100%; width:{{ ed.percent }}%; border-radius:99px;
+                  background:{{ 'var(--r)' if ed.percent > 90 else ('var(--b)' if ed.percent > 70 else 'var(--g)') }};
+                  transition:width 400ms;"></div>
+    </div>
+    <div style="font-size:11px; color:var(--text-3); margin-top:8px; display:flex; justify-content:space-between;">
+      <span>{{ ed.used_fmt }} belegt</span><span>{{ ed.free_fmt }} frei</span><span>{{ ed.total_fmt }} gesamt</span>
+    </div>
+  </div>
+  {% endfor %}
+
 </div>
 
 
-{# ── Anwendung + Backup-Stack ─────────────────────────────────────── #}
-<div class="sysinfo-info" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-
-  {# Anwendung #}
-  {% set _skip = ('python', 'psutil', 'Borg', 'DB') %}
-  <div class="ds-card on" style="overflow:hidden;">
-    <div style="padding:10px 16px; border-bottom:1px solid var(--border-s); font-size:11px;
-                text-transform:uppercase; letter-spacing:0.07em; color:var(--text-3); font-weight:600;">
-      Anwendung
-    </div>
-    <div style="padding:12px 16px;">
-      <div class="meta-grid" style="row-gap:8px;">
-        {% for key, val in info.software.items() %}
-        {% if key not in _skip %}
-        <span class="meta-label">{{ key }}</span>
-        <span class="meta-value" style="font-family:var(--mono); color:{{ 'var(--text)' if loop.first else 'var(--text-2)' }};">{{ val }}</span>
-        {% endif %}
-        {% endfor %}
-        <span class="meta-label">Python</span>
-        <span class="meta-value" style="font-family:var(--mono); color:var(--text-2);">{{ info.software.get("python", "—") }}</span>
-        <span class="meta-label">Verzeichnis</span>
-        <span class="meta-value" style="font-family:var(--mono); font-size:11px; color:var(--text-2);
-                                        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
-              title="{{ info.system.cwd }}">{{ info.system.cwd }}</span>
-        <span class="meta-label">User</span>
-        <span class="meta-value" style="font-family:var(--mono); color:var(--text-2);">{{ info.system.user }}</span>
-      </div>
-    </div>
+{# ── Anwendung ─────────────────────────────────────────────────────── #}
+<div class="ds-card on" style="overflow:hidden;">
+  <div style="padding:10px 16px; border-bottom:1px solid var(--border-s); font-size:11px;
+              text-transform:uppercase; letter-spacing:0.07em; color:var(--text-3); font-weight:600;">
+    Anwendung
   </div>
-
-  {# Stack-Infos (nur wenn Borg oder DB in extra_info) #}
-  {% if info.software.get("Borg") or info.software.get("DB") %}
-  <div class="ds-card on" style="overflow:hidden;">
-    <div style="padding:10px 16px; border-bottom:1px solid var(--border-s); font-size:11px;
-                text-transform:uppercase; letter-spacing:0.07em; color:var(--text-3); font-weight:600;">
-      Stack
+  <div style="padding:12px 16px;">
+    <div class="meta-grid" style="row-gap:8px;">
+      {% for key, val in info.software.items() %}
+      {% if key != 'psutil' %}
+      <span class="meta-label">{{ key }}</span>
+      <span class="meta-value" style="font-family:var(--mono); color:var(--text-2);">{{ val }}</span>
+      {% endif %}
+      {% endfor %}
+      <span class="meta-label">Verzeichnis</span>
+      <span class="meta-value" style="font-family:var(--mono); font-size:11px; color:var(--text-2);
+                                      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+            title="{{ info.system.cwd }}">{{ info.system.cwd }}</span>
+      <span class="meta-label">User</span>
+      <span class="meta-value" style="font-family:var(--mono); color:var(--text-2);">{{ info.system.user }}</span>
     </div>
-    <div style="padding:12px 16px;">
-      <div class="meta-grid" style="row-gap:8px;">
-        {% if info.software.get("Borg") %}
-        <span class="meta-label">Borg</span>
-        <span class="meta-value" style="font-family:var(--mono); color:var(--text-2);">{{ info.software.get("Borg") }}</span>
-        {% endif %}
-        {% if info.software.get("DB") %}
-        <span class="meta-label">Datenbank</span>
-        <span class="meta-value" style="font-family:var(--mono); color:var(--text-2);">{{ info.software.get("DB") }}</span>
-        {% endif %}
-      </div>
-      {% if info.services %}
-      {% set svc = info.services[0] %}
-      <div style="margin-top:14px; display:flex; align-items:center; justify-content:space-between;
+    {% if info.services %}
+    <div style="margin-top:14px; display:flex; flex-direction:column; gap:6px;">
+      {% for svc in info.services %}
+      <div style="display:flex; align-items:center; justify-content:space-between;
                   padding:8px 10px; background:var(--sel); border-radius:var(--rad);">
         <div>
           <div style="font-family:var(--mono); font-size:13px; color:var(--text);">{{ svc.name }}</div>
@@ -138,11 +131,27 @@
           </span>
         </div>
       </div>
-      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Updates (nur wenn update_packages_fn konfiguriert) ───────────── #}
+{% if info.update_packages is defined and info.update_packages is not none %}
+<div class="ds-card on" style="margin-top:12px;">
+  <div class="card-body" style="padding:16px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+      <div style="font-weight:600;">Updates</div>
+      {{ ui.settings_button(module='updater') }}
+    </div>
+    <div hx-get="/ui/updater/panel"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+      <span style="font-size:12px; color:var(--text-3);">Lade…</span>
     </div>
   </div>
-  {% endif %}
-
 </div>
+{% endif %}
 
 </div>{# /data-collected-at #}

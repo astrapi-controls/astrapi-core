@@ -18,6 +18,8 @@ from datetime import datetime
 _START_TIME: float = time.time()
 _services: list[str] = []
 _extra_info_fn = None
+_extra_disks: list[str] = []
+_update_packages_fn = None
 
 _cache: dict = {}
 _cache_ts: float = 0.0
@@ -27,16 +29,22 @@ _CACHE_TTL: float = 2.0
 def configure(
     services: list[str] = None,
     extra_info_fn=None,
+    extra_disks: list[str] = None,
+    update_packages_fn=None,
 ) -> None:
     """Konfiguriert projektspezifische Erweiterungen.
 
     Args:
-        services:      Liste von systemd-Service-Namen die angezeigt werden sollen.
-        extra_info_fn: Callable () → dict[str, str] mit zusätzlichen Infozeilen.
+        services:           Liste von systemd-Service-Namen die angezeigt werden sollen.
+        extra_info_fn:      Callable () → dict[str, str] mit zusätzlichen Infozeilen.
+        extra_disks:        Liste von Mountpoints die als zusätzliche Gauge-Karten angezeigt werden.
+        update_packages_fn: Callable () → list[dict] mit Paket-Versionsdaten (name, installed, latest, update_available).
     """
-    global _services, _extra_info_fn
+    global _services, _extra_info_fn, _extra_disks, _update_packages_fn
     _services = services or []
     _extra_info_fn = extra_info_fn
+    _extra_disks = extra_disks or []
+    _update_packages_fn = update_packages_fn
 
 
 # ── Hilfsfunktionen ───────────────────────────────────────────────────────────
@@ -174,6 +182,10 @@ def collect() -> dict:
 
         services   = [_systemd_service(s) for s in _services]
         extra_info = _extra_info_fn() if _extra_info_fn else {}
+        try:
+            update_packages = _update_packages_fn() if _update_packages_fn else []
+        except Exception:
+            update_packages = []
 
         procs = []
         for p in sorted(
@@ -195,6 +207,21 @@ def collect() -> dict:
             }
         except Exception:
             pass
+
+        extra_disks_data = []
+        for mp in _extra_disks:
+            try:
+                _d = psutil.disk_usage(mp)
+                extra_disks_data.append({
+                    "mountpoint": mp,
+                    "label":      mp.lstrip("/").upper() or mp,
+                    "total_fmt":  _fmt_size(_d.total),
+                    "used_fmt":   _fmt_size(_d.used),
+                    "free_fmt":   _fmt_size(_d.free),
+                    "percent":    _d.percent,
+                })
+            except Exception:
+                pass
 
         return {
             "ok":          True,
@@ -230,11 +257,13 @@ def collect() -> dict:
                 "psutil":  psutil.__version__,
                 **extra_info,
             },
-            "root_disk":  root_disk,
-            "disks":      _disk_usage(),
-            "interfaces": _net_interfaces(),
-            "services":   services,
-            "processes":  procs,
+            "root_disk":       root_disk,
+            "extra_disks":     extra_disks_data,
+            "disks":           _disk_usage(),
+            "interfaces":      _net_interfaces(),
+            "services":        services,
+            "processes":       procs,
+            "update_packages": update_packages,
         }
     except Exception as e:
         return {"ok": False, "error": str(e)}

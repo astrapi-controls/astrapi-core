@@ -198,6 +198,13 @@ def create(
 
         from astrapi.core.ui.settings_registry import get as _srget
         _light = _srget("LIGHT_MODE", _light_default)
+
+        try:
+            from astrapi.core.modules.sysinfo.engine import _update_packages_fn
+            _updater_in_sysinfo = _update_packages_fn is not None
+        except Exception:
+            _updater_in_sysinfo = False
+
         return {
             "app_name":             _display_name,
             "app_version":          _app_version,
@@ -212,6 +219,7 @@ def create(
             "col_widths":           col_widths,
             "resolve_remote_host":  resolve_remote_host,
             "last_run_status":      last_run_status,
+            "updater_in_sysinfo":   _updater_in_sysinfo,
         }
 
     # ── Navigation aus Modulen + optionaler items.yaml ────────────────────────
