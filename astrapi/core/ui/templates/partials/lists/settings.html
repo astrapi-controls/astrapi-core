@@ -1,7 +1,6 @@
 {#
   core/ui/templates/partials/lists/settings.html
-  Globale Einstellungen: Darstellung · Lokalisierung · Erkannte Module
-  Variablen: settings (dict), modules (list[Module]), flash_message (str)
+  Einstellungen – optionale Karten: Update, SSH-Key, Moduleinstellungen
 #}
 {% import 'partials/components/ui_macros.html' as ui %}
 
@@ -38,94 +37,6 @@
   </div>
   {% endif %}
 
-  <form hx-post="/ui/settings/save/global"
-        hx-target="#settings-container"
-        hx-swap="outerHTML">
-
-    {# ── Lokalisierung ──────────────────────────────────────────────────────── #}
-    <div class="settings-form-grid" style="align-items:start;">
-
-      <div>
-        <div class="ds-card on">
-          <div class="card-body" style="padding:16px;">
-            <div style="display:flex; flex-direction:column; gap:14px;">
-
-              <div class="form-group">
-                <label class="form-label">Sprache</label>
-                <select class="form-select" name="APP_LANG">
-                  {% for code, label in [('de','Deutsch'),('en','English'),('fr','Français'),('es','Español')] %}
-                  <option value="{{ code }}"
-                    {{ 'selected' if settings.get('APP_LANG', 'de') == code }}>
-                    {{ label }}
-                  </option>
-                  {% endfor %}
-                </select>
-                <div class="form-hint">Sprachkürzel für UI-Texte und HTML-lang-Attribut.</div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Zeitzone</label>
-                <input class="form-input" type="text" name="TIMEZONE"
-                       value="{{ settings.get('TIMEZONE', 'Europe/Berlin') }}"
-                       placeholder="Europe/Berlin">
-                <div class="form-hint">IANA-Zeitzone, z. B. <code>Europe/Vienna</code></div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Datumsformat</label>
-                <select class="form-select" name="DATE_FORMAT">
-                  {% for fmt in ['DD.MM.YYYY', 'YYYY-MM-DD', 'MM/DD/YYYY', 'DD/MM/YYYY'] %}
-                  <option value="{{ fmt }}"
-                    {{ 'selected' if settings.get('DATE_FORMAT', 'DD.MM.YYYY') == fmt }}>
-                    {{ fmt }}
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>{# ── Ende Lokalisierung ──────────────────────────────────────────────── #}
-
-    {# ── Speichern ─────────────────────────────────────────────────────────── #}
-    <div class="form-actions" style="padding-bottom:4px;">
-      <button type="submit" class="btn btn-primary btn-sm">Speichern</button>
-    </div>
-
-  </form>
-
-  {# ── Core-Module ─────────────────────────────────────────────────────────── #}
-  {% set toggleable_core_mods = core_module_list | selectattr('key', '!=', 'settings') | rejectattr('nav_hidden') | list %}
-  {% if toggleable_core_mods %}
-  <div>
-    <div class="ds-card on">
-      <div class="card-body" style="padding:16px;">
-        <div style="font-weight:600; margin-bottom:4px;">Core-Module</div>
-        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
-          Änderungen werden nach einem Neustart wirksam.
-        </div>
-        <div style="display:flex; flex-direction:column; gap:2px;">
-          {% for mod in toggleable_core_mods %}
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border-color);">
-            <span style="font-size:14px;">{{ mod.label }}</span>
-            <button
-              class="toggle-switch {{ 'toggle-on' if mod.enabled else 'toggle-off' }}"
-              title="{{ 'Deaktivieren' if mod.enabled else 'Aktivieren' }}"
-              hx-post="/ui/settings/core-module/{{ mod.key }}/toggle"
-              hx-target="#settings-container"
-              hx-swap="outerHTML">
-              <span class="toggle-knob"></span>
-            </button>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
 
   {# ── SSH-Key (nur wenn App es benötigt) ──────────────────────────────────── #}
   {% if show_ssh_key %}
