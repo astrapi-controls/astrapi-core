@@ -304,12 +304,35 @@ def _register_settings_routes(app: Flask, modules: list, app_cfg: dict,
     """
 
     def _ctx(flash: str = "") -> dict:
+        from astrapi.core.ui.settings_registry import get_module as _get_mod
+        from astrapi.core.system.secrets import get_secret_safe as _get_secret
+        from astrapi.core.ui.field_resolver import resolve_options_endpoint as _resolve
+
+        mod_settings = {}
+        for m in modules:
+            if not m.settings_schema:
+                continue
+            values = {
+                f["key"]: (
+                    _get_secret(f"module.{m.key}.{f['key']}", f.get("default", ""))
+                    if f.get("type") == "password"
+                    else _get_mod(m.key, f["key"], f.get("default", ""))
+                )
+                for f in m.settings_schema if "key" in f
+            }
+            mod_settings[m.key] = {
+                "mod":    m,
+                "schema": _resolve(m.settings_schema),
+                "values": values,
+            }
+
         return {
             "settings":         all_settings(),
             "modules":          modules,
             "app_cfg":          app_cfg,
             "flash_message":    flash,
             "core_module_list": list_available_core_modules(),
+            "mod_settings":     mod_settings,
         }
 
     @app.route("/settings")
@@ -339,8 +362,34 @@ def _register_settings_routes(app: Flask, modules: list, app_cfg: dict,
         mod = next((m for m in modules if m.key == module_key), None)
         if mod is None:
             return "Modul nicht gefunden", 404
-        prefixed = {f"module.{module_key}.{k}": v
-                    for k, v in request.form.to_dict().items()}
+
+        from astrapi.core.system.secrets import set_secret as _set_secret
+        schema = mod.settings_schema or []
+        password_keys = {f["key"] for f in schema if f.get("type") == "password"}
+        list_keys     = {f["key"] for f in schema if f.get("type") == "list"}
+
+        prefixed = {}
+        for lk in list_keys:
+            items, i = [], 0
+            while True:
+                val = request.form.get(f"{lk}_{i}")
+                if val is None:
+                    break
+                if val.strip():
+                    items.append(val.strip())
+                i += 1
+            prefixed[f"module.{module_key}.{lk}"] = items
+
+        handled = {f"{lk}_{i}" for lk in list_keys for i in range(50)}
+        for k, v in request.form.to_dict().items():
+            if k in handled:
+                continue
+            if k in password_keys:
+                if v.strip():
+                    _set_secret(f"module.{module_key}.{k}", v.strip())
+            else:
+                prefixed[f"module.{module_key}.{k}"] = v
+
         set_many(prefixed)
         return render_template(
             "partials/lists/settings.html",

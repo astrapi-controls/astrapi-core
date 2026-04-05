@@ -38,6 +38,11 @@
   {% endif %}
 
 
+  {# ── Moduleinstellungen ──────────────────────────────────────────────────── #}
+  {% for key, data in mod_settings.items() %}
+  {% include "settings/partials/module_card.html" %}
+  {% endfor %}
+
   {# ── SSH-Key (nur wenn App es benötigt) ──────────────────────────────────── #}
   {% if show_ssh_key %}
   <div>
