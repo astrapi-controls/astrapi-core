@@ -62,6 +62,7 @@ class Module:
     settings_defaults:     dict          = field(default_factory=dict)
     settings_schema:       list          = field(default_factory=list)
     settings_modal_width:  int           = 480
+    settings_button:       bool          = True
     card_actions:          list          = field(default_factory=list)
 
     module_root: Optional[Path] = field(default=None, repr=False)

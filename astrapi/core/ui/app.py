@@ -162,7 +162,7 @@ def create(
     def _inject_globals():
         def module_has_settings(key: str) -> bool:
             m = _mod_map.get(key)
-            return bool(m and m.settings_schema)
+            return bool(m and m.settings_schema and m.settings_button)
 
         def module_label(key: str) -> str:
             m = _mod_map.get(key)

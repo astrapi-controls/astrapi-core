@@ -1,7 +1,2 @@
-fields:
-  - key:     index_token
-    label:   Registry-Token
-    type:    password
-    hint:    "GitLab Personal Access Token oder Deploy Token (read_package_registry)"
-    default: ""
+fields: []
 

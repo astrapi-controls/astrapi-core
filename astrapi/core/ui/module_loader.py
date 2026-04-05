@@ -190,6 +190,7 @@ def load_modul(module_dir: Path, key: str, api_router, ui_blueprint) -> "Module"
         settings_defaults    = merged_defaults,
         settings_schema      = settings_schema,
         settings_modal_width = settings_modal_width,
+        settings_button      = bool(cfg.get("settings_button", True)),
         card_actions         = _expand_card_actions(cfg.get("card_actions", []), key),
         module_root          = module_dir,
     )
