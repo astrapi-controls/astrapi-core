@@ -45,12 +45,37 @@ def _generate_key() -> tuple[bool, str]:
 
 def _ctx(flash: str = "") -> dict:
     from astrapi.core.ui.settings_registry import all_settings
+    from astrapi.core.ui.settings_registry import get_module as _get_mod
     from astrapi.core.ui.module_registry import list_available_core_modules
+    from astrapi.core.system.secrets import get_secret_safe as _get_secret
+    from astrapi.core.ui.field_resolver import resolve_options_endpoint as _resolve
+
+    modules = current_app.config.get("LOADED_MODULES", [])
+
+    mod_settings = {}
+    for m in modules:
+        if not m.settings_schema:
+            continue
+        values = {
+            f["key"]: (
+                _get_secret(f"module.{m.key}.{f['key']}", f.get("default", ""))
+                if f.get("type") == "password"
+                else _get_mod(m.key, f["key"], f.get("default", ""))
+            )
+            for f in m.settings_schema if "key" in f
+        }
+        mod_settings[m.key] = {
+            "mod":    m,
+            "schema": _resolve(m.settings_schema),
+            "values": values,
+        }
+
     return {
         "settings":         all_settings(),
-        "modules":          current_app.config.get("LOADED_MODULES", []),
+        "modules":          modules,
         "flash_message":    flash,
         "core_module_list": list_available_core_modules(),
+        "mod_settings":     mod_settings,
     }
 
 
