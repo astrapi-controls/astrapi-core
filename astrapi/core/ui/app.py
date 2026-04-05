@@ -220,6 +220,7 @@ def create(
             "resolve_remote_host":  resolve_remote_host,
             "last_run_status":      last_run_status,
             "updater_in_sysinfo":   _updater_in_sysinfo,
+            "show_ssh_key":         app.config.get("SHOW_SSH_KEY", False),
         }
 
     # ── Navigation aus Modulen + optionaler items.yaml ────────────────────────
