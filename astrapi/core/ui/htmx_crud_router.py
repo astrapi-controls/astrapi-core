@@ -55,10 +55,9 @@ def make_htmx_crud_router(
             raise HTTPException(500, f"Schema-Datei fehlerhaft: {e}")
 
     def _list_response(request: Request):
-        from api.templates import templates
-        from api.storage import load_config
-        from api.routers.run import get_running
-        content = templates.TemplateResponse(
+        from astrapi.core.ui.fastapi_templates import get_templates
+        from astrapi.core.system.db import load_config
+        content = get_templates().TemplateResponse(
             request,
             "partials/list_wrapper_inner.html",
             {
@@ -67,7 +66,7 @@ def make_htmx_crud_router(
                 "content_template": f"{key}/partials/list.html",
                 "container_id":     f"tab-{key}",
                 "loading_id":       f"{key}-loading",
-                "running":          get_running(),
+                "running":          {},
             },
         ).body.decode()
         return HTMLResponse(content, headers={
@@ -118,7 +117,7 @@ def make_htmx_crud_router(
 
     @router.post("/create")
     async def create_one(request: Request):
-        from api.storage import save_item, next_item_id
+        from astrapi.core.system.db import save_item, next_item_id
         form    = await request.form()
         payload = _parse_form(form, _load_schema())
         save_item(key, next_item_id(key), _clean(payload))
@@ -128,7 +127,7 @@ def make_htmx_crud_router(
 
     @router.patch("/{item_id}/edit")
     async def patch_one(item_id: str, request: Request):
-        from api.storage import get_item, save_item
+        from astrapi.core.system.db import get_item, save_item
         iid      = int(item_id)
         existing = get_item(key, iid)
         if existing is None:
@@ -143,7 +142,7 @@ def make_htmx_crud_router(
 
     @router.delete("/{item_id}/delete")
     def delete_one(request: Request, item_id: str, hx_request: str | None = Header(None)):
-        from api.storage import delete_item
+        from astrapi.core.system.db import delete_item
         if not delete_item(key, item_id):
             raise HTTPException(404, "Item not found")
         if hx_request:
@@ -153,19 +152,19 @@ def make_htmx_crud_router(
     if preview_fn is not None:
         @router.get("/{item_id}/preview")
         def preview_item(item_id: str, request: Request):
-            from api.templates import templates
-            from api.storage import get_item
+            from astrapi.core.ui.fastapi_templates import get_templates
+            from astrapi.core.system.db import get_item
             entry = get_item(key, item_id)
             if entry is None:
                 raise HTTPException(404, "Item not found")
-            return templates.TemplateResponse(request, "partials/preview_modal.html", {
+            return get_templates().TemplateResponse(request, "partials/preview_modal.html", {
                 "description": entry.get("description", item_id),
                 "commands":    preview_fn(item_id),
             })
 
     @router.post("/{item_id}/toggle")
     def toggle_item(request: Request, item_id: str, hx_request: str | None = Header(None)):
-        from api.storage import load_config, save_item
+        from astrapi.core.system.db import load_config, save_item
         cfg = load_config(key)
         iid = item_id
         if iid not in cfg:
