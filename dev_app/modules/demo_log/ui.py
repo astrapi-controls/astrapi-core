@@ -1,9 +1,12 @@
 """dev_app/modules/demo_log/ui.py – Read-only Beispiel-Log-Liste"""
 
-from flask import Blueprint, render_template
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
 
-KEY = "demo_log"
-bp  = Blueprint(f"{KEY}_ui", __name__)
+from astrapi.core.ui.render import render
+
+KEY    = "demo_log"
+router = APIRouter()
 
 _ENTRIES = [
     {"ts": "2026-03-26 10:00:00", "level": "INFO",  "message": "Dienst gestartet"},
@@ -15,6 +18,6 @@ _ENTRIES = [
 ]
 
 
-@bp.route(f"/ui/{KEY}/content")
-def content():
-    return render_template(f"{KEY}/partials/list.html", entries=_ENTRIES)
+@router.get(f"/ui/{KEY}/content", response_class=HTMLResponse)
+def content(request: Request):
+    return render(request, f"{KEY}/partials/list.html", {"entries": _ENTRIES})

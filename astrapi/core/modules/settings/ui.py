@@ -1,13 +1,16 @@
-"""core/modules/settings/ui.py – Flask-Blueprint für Settings UI-Routen."""
+"""core/modules/settings/ui.py – FastAPI-Router für Settings UI-Routen."""
 import subprocess
 from pathlib import Path
-from flask import Blueprint, render_template, current_app
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
 
-KEY = "settings"
-bp  = Blueprint(f"{KEY}_ui", __name__)
+from astrapi.core.ui.render import render
 
-_SSH_DIR      = Path.home() / ".ssh"
-_KEY_TYPES    = ["id_ed25519", "id_ecdsa", "id_rsa"]
+KEY    = "settings"
+router = APIRouter()
+
+_SSH_DIR   = Path.home() / ".ssh"
+_KEY_TYPES = ["id_ed25519", "id_ecdsa", "id_rsa"]
 
 
 def _find_key() -> tuple[Path | None, Path | None]:
@@ -46,11 +49,11 @@ def _generate_key() -> tuple[bool, str]:
 def _ctx(flash: str = "") -> dict:
     from astrapi.core.ui.settings_registry import all_settings
     from astrapi.core.ui.settings_registry import get_module as _get_mod
-    from astrapi.core.ui.module_registry import list_available_core_modules
+    from astrapi.core.ui.module_registry import _instance as _registry, list_available_core_modules
     from astrapi.core.system.secrets import get_secret_safe as _get_secret
     from astrapi.core.ui.field_resolver import resolve_options_endpoint as _resolve
 
-    modules = current_app.config.get("LOADED_MODULES", [])
+    modules = list(_registry.all().values())
 
     mod_settings = {}
     for m in modules:
@@ -84,31 +87,30 @@ def _ctx(flash: str = "") -> dict:
 
 def _ssh_ctx(flash: str = "", flash_ok: bool = True) -> dict:
     return {
-        "pubkey":    _read_pubkey(),
-        "flash":     flash,
-        "flash_ok":  flash_ok,
+        "pubkey":   _read_pubkey(),
+        "flash":    flash,
+        "flash_ok": flash_ok,
     }
 
 
-@bp.route(f"/ui/{KEY}/content")
-def settings_content():
-    return render_template("settings/partials/tab.html", **_ctx())
+@router.get(f"/ui/{KEY}/content", response_class=HTMLResponse)
+def settings_content(request: Request):
+    return render(request, "settings/partials/tab.html", _ctx())
 
 
-@bp.route(f"/ui/{KEY}/ssh-key")
-def ssh_key():
-    return render_template("settings/partials/ssh_key.html", **_ssh_ctx())
+@router.get(f"/ui/{KEY}/ssh-key", response_class=HTMLResponse)
+def ssh_key(request: Request):
+    return render(request, "settings/partials/ssh_key.html", _ssh_ctx())
 
 
-@bp.route(f"/ui/{KEY}/ssh-key/generate", methods=["POST"])
-def ssh_key_generate():
+@router.post(f"/ui/{KEY}/ssh-key/generate", response_class=HTMLResponse)
+def ssh_key_generate(request: Request):
     key_path = _SSH_DIR / "id_ed25519"
     if key_path.exists():
-        # Sicherung anlegen
         backup = _SSH_DIR / "id_ed25519.bak"
         key_path.rename(backup)
         pub = _SSH_DIR / "id_ed25519.pub"
         if pub.exists():
             pub.rename(_SSH_DIR / "id_ed25519.pub.bak")
     ok, msg = _generate_key()
-    return render_template("settings/partials/ssh_key.html", **_ssh_ctx(msg, ok))
+    return render(request, "settings/partials/ssh_key.html", _ssh_ctx(msg, ok))

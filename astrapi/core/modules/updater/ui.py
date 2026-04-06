@@ -1,9 +1,12 @@
 # core/modules/updater/ui.py
-from flask import Blueprint, render_template
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
+
+from astrapi.core.ui.render import render
 from . import engine
 
-KEY = "updater"
-bp  = Blueprint(f"{KEY}_ui", __name__)
+KEY    = "updater"
+router = APIRouter()
 
 
 def _ctx() -> dict:
@@ -18,26 +21,26 @@ def _ctx() -> dict:
     }
 
 
-@bp.route(f"/ui/{KEY}/content")
-def updater_content():
-    return render_template(f"{KEY}/partials/tab.html", **_ctx())
+@router.get(f"/ui/{KEY}/content", response_class=HTMLResponse)
+def updater_content(request: Request):
+    return render(request, f"{KEY}/partials/tab.html", _ctx())
 
 
-@bp.route(f"/ui/{KEY}/panel")
-def updater_panel():
+@router.get(f"/ui/{KEY}/panel", response_class=HTMLResponse)
+def updater_panel(request: Request):
     """Nur das Update-Panel – wird per HTMX-Polling aktualisiert."""
-    return render_template(f"{KEY}/partials/panel.html", **_ctx())
+    return render(request, f"{KEY}/partials/panel.html", _ctx())
 
 
-@bp.route(f"/ui/{KEY}/check", methods=["POST"])
-def updater_check():
+@router.post(f"/ui/{KEY}/check", response_class=HTMLResponse)
+def updater_check(request: Request):
     """Führt den Versionscheck synchron durch und rendert das aktualisierte Panel."""
     engine.check_updates()
-    return render_template(f"{KEY}/partials/panel.html", **_ctx())
+    return render(request, f"{KEY}/partials/panel.html", _ctx())
 
 
-@bp.route(f"/ui/{KEY}/update", methods=["POST"])
-def updater_update():
+@router.post(f"/ui/{KEY}/update", response_class=HTMLResponse)
+def updater_update(request: Request):
     """Startet das Update (async) und gibt das Panel mit Polling zurück."""
     engine.run_update()
-    return render_template(f"{KEY}/partials/panel.html", **_ctx())
+    return render(request, f"{KEY}/partials/panel.html", _ctx())

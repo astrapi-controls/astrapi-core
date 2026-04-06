@@ -180,26 +180,27 @@ def load_modules(app_root: Path) -> list:
 
 # ── Registrieren ──────────────────────────────────────────────────────────────
 
-def register_flask_modules(flask_app, modules: list, jinja_loaders: list) -> None:
+def register_ui_modules(fastapi_app, modules: list, jinja_loaders: list) -> None:
+    """Registriert Modul-Template-Loader und UI-Router an der FastAPI-App."""
     from jinja2 import FileSystemLoader, PrefixLoader
 
     for mod in modules:
         if mod.module_root:
             tpl_dir = mod.module_root / "templates"
             if tpl_dir.exists():
-                # PrefixLoader mit mod.key als Prefix → unabhängig vom Ordnernamen.
-                # render_template("hosts/partials/list.html") sucht in
-                # {module_root}/templates/partials/list.html – egal ob der Ordner
-                # "hosts", "test" oder anders heißt.
                 jinja_loaders.insert(0, PrefixLoader(
                     {mod.key: FileSystemLoader(str(tpl_dir))}
                 ))
 
-        if mod.ui_blueprint is not None:
+        if mod.ui_router is not None:
             try:
-                flask_app.register_blueprint(mod.ui_blueprint)
+                fastapi_app.include_router(mod.ui_router)
             except Exception as e:
-                warnings.warn(f"Blueprint '{mod.key}' konnte nicht registriert werden: {e}")
+                warnings.warn(f"Router '{mod.key}' konnte nicht registriert werden: {e}")
+
+
+# Rückwärtskompatibilität
+register_flask_modules = register_ui_modules
 
 
 def register_fastapi_modules(fastapi_app, modules: list) -> None:

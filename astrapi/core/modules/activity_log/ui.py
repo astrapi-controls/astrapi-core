@@ -1,29 +1,29 @@
 # core/modules/activity_log/ui.py
-from flask import Blueprint, render_template
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
 
+from astrapi.core.ui.render import render
 from .engine import KEY, list_activity, enrich, registered_modules
 
-bp = Blueprint(f"{KEY}_ui", __name__)
+router = APIRouter()
 
 
-@bp.route("/ui/activity_log/clear-confirm")
-def clear_confirm():
-    return render_template(
-        "partials/confirm_modal.html",
+@router.get(f"/ui/{KEY}/clear-confirm", response_class=HTMLResponse)
+def clear_confirm(request: Request):
+    return render(request, "partials/confirm_modal.html", dict(
         description="Alle Activity-Log-Einträge",
         verb="löschen",
         confirm_url="/api/activity_log/clear",
         method="delete",
         container_id="tab-activity_log",
         loading_id="activity_log-loading",
-    )
+    ))
 
 
-@bp.route("/ui/activity_log/content")
-def content():
+@router.get(f"/ui/{KEY}/content", response_class=HTMLResponse)
+def content(request: Request):
     entries = enrich(list_activity(limit=200))
-    return render_template(
-        "activity_log/partials/list.html",
+    return render(request, "activity_log/partials/list.html", dict(
         entries=entries,
         modules=registered_modules(),
-    )
+    ))

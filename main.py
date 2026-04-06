@@ -1,8 +1,8 @@
 """
-astrapi-core – Einstiegspunkt (FastAPI + Flask)
+astrapi-core – Einstiegspunkt (FastAPI)
 
 FastAPI  → /api/...       JSON-Endpunkte, OpenAPI, Swagger
-Flask    → /              UI, HTMX-Partials, Modals
+FastAPI  → /              UI, HTMX-Partials, Modals
 
 Start:
     python main.py              # Port 5001 (Standard)
@@ -23,7 +23,6 @@ if str(APP_ROOT) not in sys.path:
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from a2wsgi import WSGIMiddleware
 import uvicorn
 
 from astrapi.core.ui import create as create_ui
@@ -49,7 +48,6 @@ def _db_check() -> tuple[bool, dict]:
 def create_app() -> FastAPI:
     configure_settings(health_fn=_db_check, app_name=get_display_name(APP_ROOT))
 
-    # DB zuerst konfigurieren, damit settings_registry + SqliteStorage SQLite nutzen können
     from astrapi.core.system.db import configure as _configure_db, create_all_registered_tables
     _configure_db(APP_ROOT / "data" / "app.db")
     create_all_registered_tables()
@@ -68,11 +66,10 @@ def create_app() -> FastAPI:
 
     register_health(api, check_fn=_db_check, start_time=_START_TIME)
 
-    ui  = create_ui(app_root=APP_ROOT, modules=modules)
-
     core_static = PROJECT_ROOT / "astrapi" / "core" / "ui" / "static"
     api.mount("/static", StaticFiles(directory=str(core_static)), name="static")
-    api.mount("/", WSGIMiddleware(ui))
+
+    create_ui(api, app_root=APP_ROOT, modules=modules)
 
     start_watchdog(check_fn=lambda: _db_check()[0])
     sd_notify("READY=1")

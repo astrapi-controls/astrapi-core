@@ -15,13 +15,13 @@ Nutzung in anderen Modulen:
 
 from astrapi.core.ui import Module
 from .api import router
-from .ui import bp
+from .ui import router as ui_router
 
 module = Module(
-    key          = "notify",
-    label        = "Benachrichtigungen",
-    icon         = "bell",
-    nav_group    = "System",
-    api_router   = router,
-    ui_blueprint = bp,
+    key        = "notify",
+    label      = "Benachrichtigungen",
+    icon       = "bell",
+    nav_group  = "System",
+    api_router = router,
+    ui_router  = ui_router,
 )

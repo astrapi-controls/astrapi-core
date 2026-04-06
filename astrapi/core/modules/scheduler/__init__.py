@@ -9,13 +9,13 @@ Projekte konfigurieren den Scheduler vor dem App-Start:
 """
 from astrapi.core.ui import Module
 from .api import router
-from .ui import bp
+from .ui import router as ui_router
 
 module = Module(
-    key          = "scheduler",
-    label        = "Scheduler",
-    icon         = "clock",
-    api_router   = router,
-    ui_blueprint = bp,
-    nav_group    = "System",
+    key        = "scheduler",
+    label      = "Scheduler",
+    icon       = "clock",
+    api_router = router,
+    ui_router  = ui_router,
+    nav_group  = "System",
 )

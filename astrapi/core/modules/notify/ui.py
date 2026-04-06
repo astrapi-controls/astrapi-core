@@ -1,9 +1,11 @@
-"""core/modules/notify/ui.py – Flask-Blueprint für Benachrichtigungs-Kanäle und -Jobs."""
+"""core/modules/notify/ui.py – FastAPI-Router für Benachrichtigungs-Kanäle und -Jobs."""
 
 import uuid
 
-from flask import Blueprint, render_template, request
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
 
+from astrapi.core.ui.render import render
 from .engine import (
     KEY,
     list_channels, get_channel, create_channel, update_channel,
@@ -13,7 +15,7 @@ from .engine import (
 )
 from .schema import ALL_EVENTS
 
-bp = Blueprint(f"{KEY}_ui", __name__)
+router = APIRouter()
 
 _CONTAINER_ID = f"tab-{KEY}"
 _LOADING_ID   = f"{KEY}-loading"
@@ -40,48 +42,44 @@ def _ctx(**extra) -> dict:
     )
 
 
-def _parse_channel_form() -> dict:
-    """Liest und normalisiert alle Kanalformularfelder (nur Backend-Konfiguration)."""
-    enabled = "1" in request.form.getlist("enabled")
+def _parse_channel_form(form) -> dict:
+    """Liest und normalisiert alle Kanalformularfelder."""
+    enabled = "1" in form.getlist("enabled")
     return {
-        "label":               request.form.get("label", "").strip(),
-        "backend":             request.form.get("backend", "ntfy"),
+        "label":               form.get("label", "").strip(),
+        "backend":             form.get("backend", "ntfy"),
         "enabled":             enabled,
         # ntfy
-        "ntfy_url":            request.form.get("ntfy_url", "https://ntfy.sh").strip(),
-        "ntfy_topic":          request.form.get("ntfy_topic", "").strip(),
-        "ntfy_token":          request.form.get("ntfy_token", "").strip(),
-        "ntfy_verify_ssl":     "ntfy_verify_ssl" in request.form,
+        "ntfy_url":            form.get("ntfy_url", "https://ntfy.sh").strip(),
+        "ntfy_topic":          form.get("ntfy_topic", "").strip(),
+        "ntfy_token":          form.get("ntfy_token", "").strip(),
+        "ntfy_verify_ssl":     "ntfy_verify_ssl" in form,
         # E-Mail
-        "mail_smtp_host":      request.form.get("mail_smtp_host", "").strip(),
-        "mail_smtp_port":      int(request.form.get("mail_smtp_port") or 587),
-        "mail_smtp_user":      request.form.get("mail_smtp_user", "").strip(),
-        "mail_smtp_password":  request.form.get("mail_smtp_password", "").strip(),
-        "mail_smtp_tls":       "mail_smtp_tls" in request.form,
-        "mail_from":           request.form.get("mail_from", "").strip(),
-        "mail_to":             request.form.get("mail_to", "").strip(),
-        "mail_subject_prefix": request.form.get("mail_subject_prefix", "[Notify]").strip(),
+        "mail_smtp_host":      form.get("mail_smtp_host", "").strip(),
+        "mail_smtp_port":      int(form.get("mail_smtp_port") or 587),
+        "mail_smtp_user":      form.get("mail_smtp_user", "").strip(),
+        "mail_smtp_password":  form.get("mail_smtp_password", "").strip(),
+        "mail_smtp_tls":       "mail_smtp_tls" in form,
+        "mail_from":           form.get("mail_from", "").strip(),
+        "mail_to":             form.get("mail_to", "").strip(),
+        "mail_subject_prefix": form.get("mail_subject_prefix", "[Notify]").strip(),
     }
 
 
-def _parse_job_form() -> dict:
+def _parse_job_form(form) -> dict:
     """Liest und normalisiert alle Job-Formularfelder."""
-    enabled = "1" in request.form.getlist("enabled")
+    enabled = "1" in form.getlist("enabled")
     return {
-        "label":      request.form.get("label", "").strip(),
-        "channel_id": request.form.get("channel_id", "").strip(),
+        "label":      form.get("label", "").strip(),
+        "channel_id": form.get("channel_id", "").strip(),
         "enabled":    enabled,
-        "events":     request.form.getlist("events"),
-        "sources":    request.form.getlist("sources"),
+        "events":     list(form.getlist("events")),
+        "sources":    list(form.getlist("sources")),
     }
 
 
 def _split_sources() -> tuple[dict, dict]:
-    """Trennt registrierte Quellen in Modul-Quellen und Scheduler-Jobs.
-
-    Returns:
-        (module_sources, scheduler_sources) – je {key: label}.
-    """
+    """Trennt registrierte Quellen in Modul-Quellen und Scheduler-Jobs."""
     all_sources = get_registered_sources()
     try:
         from astrapi.core.modules.scheduler.engine import list_jobs as _sched_list
@@ -95,54 +93,50 @@ def _split_sources() -> tuple[dict, dict]:
 
 # ── Gemeinsame Listen-View ────────────────────────────────────────────────────
 
-@bp.route(f"/ui/{KEY}/content")
-def content():
-    return render_template(f"{KEY}/partials/list.html", **_ctx())
+@router.get(f"/ui/{KEY}/content", response_class=HTMLResponse)
+def content(request: Request):
+    return render(request, f"{KEY}/partials/list.html", _ctx())
 
 
 # ── Kanal-Modale ──────────────────────────────────────────────────────────────
 
-@bp.route(f"/ui/{KEY}/backend-select")
-def backend_select_modal():
-    return render_template(
-        f"{KEY}/partials/backend_select_modal.html",
+@router.get(f"/ui/{KEY}/backend-select", response_class=HTMLResponse)
+def backend_select_modal(request: Request):
+    return render(request, f"{KEY}/partials/backend_select_modal.html", dict(
         builtin_backends=_BUILTIN_BACKENDS,
         custom_backends=get_registered_backends(),
-    )
+    ))
 
 
-@bp.route(f"/ui/{KEY}/create/<backend>")
-def create_modal(backend: str):
-    return render_template(
-        f"{KEY}/partials/channel_modal.html",
+@router.get(f"/ui/{KEY}/create/{{backend}}", response_class=HTMLResponse)
+def create_modal(backend: str, request: Request):
+    return render(request, f"{KEY}/partials/channel_modal.html", dict(
         channel=None,
         channel_id=None,
         selected_backend=backend,
         title="Neuer Benachrichtigungskanal",
         submit_url=f"/ui/{KEY}/",
-    )
+    ))
 
 
-@bp.route(f"/ui/{KEY}/<channel_id>/edit")
-def edit_modal(channel_id: str):
+@router.get(f"/ui/{KEY}/{{channel_id}}/edit", response_class=HTMLResponse)
+def edit_modal(channel_id: str, request: Request):
     channel = get_channel(channel_id)
     if channel is None:
-        return "Kanal nicht gefunden", 404
-    return render_template(
-        f"{KEY}/partials/channel_modal.html",
+        return HTMLResponse("Kanal nicht gefunden", status_code=404)
+    return render(request, f"{KEY}/partials/channel_modal.html", dict(
         channel=channel,
         channel_id=channel_id,
         selected_backend=channel.get("backend", "ntfy"),
         title=f"Kanal bearbeiten ({channel.get('backend', 'ntfy')})",
         submit_url=f"/ui/{KEY}/{channel_id}/update",
-    )
+    ))
 
 
-@bp.route(f"/ui/{KEY}/<channel_id>/delete")
-def delete_modal(channel_id: str):
+@router.get(f"/ui/{KEY}/{{channel_id}}/delete", response_class=HTMLResponse)
+def delete_modal(channel_id: str, request: Request):
     channel = get_channel(channel_id) or {}
-    return render_template(
-        "partials/confirm_modal.html",
+    return render(request, "partials/confirm_modal.html", dict(
         description=channel.get("label", channel_id),
         verb="löschen",
         confirm_url=f"/api/{KEY}/{channel_id}",
@@ -150,16 +144,15 @@ def delete_modal(channel_id: str):
         reload_url=f"/ui/{KEY}/content",
         container_id=_CONTAINER_ID,
         loading_id=_LOADING_ID,
-    )
+    ))
 
 
-@bp.route(f"/ui/{KEY}/<channel_id>/toggle")
-def toggle_modal(channel_id: str):
+@router.get(f"/ui/{KEY}/{{channel_id}}/toggle", response_class=HTMLResponse)
+def toggle_modal(channel_id: str, request: Request):
     channel = get_channel(channel_id) or {}
-    enabled = request.args.get("enabled", "True")
+    enabled = request.query_params.get("enabled", "True")
     verb    = "deaktivieren" if enabled == "True" else "aktivieren"
-    return render_template(
-        "partials/confirm_modal.html",
+    return render(request, "partials/confirm_modal.html", dict(
         description=channel.get("label", channel_id),
         verb=verb,
         confirm_url=f"/api/{KEY}/{channel_id}/toggle",
@@ -167,47 +160,48 @@ def toggle_modal(channel_id: str):
         reload_url=f"/ui/{KEY}/content",
         container_id=_CONTAINER_ID,
         loading_id=_LOADING_ID,
-    )
+    ))
 
 
 # ── Kanal CRUD-Aktionen ───────────────────────────────────────────────────────
 
-@bp.route(f"/ui/{KEY}/", methods=["POST"])
-def create_apply():
+@router.post(f"/ui/{KEY}/", response_class=HTMLResponse)
+async def create_apply(request: Request):
     channel_id = f"ch-{uuid.uuid4().hex[:8]}"
-    data = _parse_channel_form()
+    form = await request.form()
+    data = _parse_channel_form(form)
     try:
         create_channel(channel_id, data)
     except KeyError:
-        return "ID bereits vergeben", 409
-    return render_template(f"{KEY}/partials/list.html", **_ctx())
+        return HTMLResponse("ID bereits vergeben", status_code=409)
+    return render(request, f"{KEY}/partials/list.html", _ctx())
 
 
-@bp.route(f"/ui/{KEY}/<channel_id>/update", methods=["POST"])
-def edit_apply(channel_id: str):
-    data = _parse_channel_form()
+@router.post(f"/ui/{KEY}/{{channel_id}}/update", response_class=HTMLResponse)
+async def edit_apply(channel_id: str, request: Request):
+    form = await request.form()
+    data = _parse_channel_form(form)
     try:
         update_channel(channel_id, data)
     except KeyError:
-        return "Kanal nicht gefunden", 404
-    return render_template(f"{KEY}/partials/list.html", **_ctx())
+        return HTMLResponse("Kanal nicht gefunden", status_code=404)
+    return render(request, f"{KEY}/partials/list.html", _ctx())
 
 
 # ── Kanal-Test ────────────────────────────────────────────────────────────────
 
-@bp.route(f"/ui/{KEY}/<channel_id>/test", methods=["POST"])
-def test_channel_view(channel_id: str):
+@router.post(f"/ui/{KEY}/{{channel_id}}/test", response_class=HTMLResponse)
+def test_channel_view(channel_id: str, request: Request):
     ok, msg = _test_channel(channel_id)
-    return _test_badge(ok, msg)
+    return _test_badge(request, ok, msg)
 
 
 # ── Job-Modale ────────────────────────────────────────────────────────────────
 
-@bp.route(f"/ui/{KEY}/jobs/create")
-def create_job_modal():
+@router.get(f"/ui/{KEY}/jobs/create", response_class=HTMLResponse)
+def create_job_modal(request: Request):
     module_sources, scheduler_sources = _split_sources()
-    return render_template(
-        f"{KEY}/partials/job_modal.html",
+    return render(request, f"{KEY}/partials/job_modal.html", dict(
         job=None,
         job_id=None,
         title="Neuer Notify-Job",
@@ -216,17 +210,16 @@ def create_job_modal():
         all_sources=module_sources,
         scheduler_sources=scheduler_sources,
         all_channels=list_channels(),
-    )
+    ))
 
 
-@bp.route(f"/ui/{KEY}/jobs/<job_id>/edit")
-def edit_job_modal(job_id: str):
+@router.get(f"/ui/{KEY}/jobs/{{job_id}}/edit", response_class=HTMLResponse)
+def edit_job_modal(job_id: str, request: Request):
     job = get_job(job_id)
     if job is None:
-        return "Job nicht gefunden", 404
+        return HTMLResponse("Job nicht gefunden", status_code=404)
     module_sources, scheduler_sources = _split_sources()
-    return render_template(
-        f"{KEY}/partials/job_modal.html",
+    return render(request, f"{KEY}/partials/job_modal.html", dict(
         job=job,
         job_id=job_id,
         title="Job bearbeiten",
@@ -235,14 +228,13 @@ def edit_job_modal(job_id: str):
         all_sources=module_sources,
         scheduler_sources=scheduler_sources,
         all_channels=list_channels(),
-    )
+    ))
 
 
-@bp.route(f"/ui/{KEY}/jobs/<job_id>/delete")
-def delete_job_modal(job_id: str):
+@router.get(f"/ui/{KEY}/jobs/{{job_id}}/delete", response_class=HTMLResponse)
+def delete_job_modal(job_id: str, request: Request):
     job = get_job(job_id) or {}
-    return render_template(
-        "partials/confirm_modal.html",
+    return render(request, "partials/confirm_modal.html", dict(
         description=job.get("label", job_id),
         verb="löschen",
         confirm_url=f"/api/{KEY}/jobs/{job_id}",
@@ -250,16 +242,15 @@ def delete_job_modal(job_id: str):
         reload_url=f"/ui/{KEY}/content",
         container_id=_CONTAINER_ID,
         loading_id=_LOADING_ID,
-    )
+    ))
 
 
-@bp.route(f"/ui/{KEY}/jobs/<job_id>/toggle")
-def toggle_job_modal(job_id: str):
+@router.get(f"/ui/{KEY}/jobs/{{job_id}}/toggle", response_class=HTMLResponse)
+def toggle_job_modal(job_id: str, request: Request):
     job     = get_job(job_id) or {}
-    enabled = request.args.get("enabled", "True")
+    enabled = request.query_params.get("enabled", "True")
     verb    = "deaktivieren" if enabled == "True" else "aktivieren"
-    return render_template(
-        "partials/confirm_modal.html",
+    return render(request, "partials/confirm_modal.html", dict(
         description=job.get("label", job_id),
         verb=verb,
         confirm_url=f"/api/{KEY}/jobs/{job_id}/toggle",
@@ -267,39 +258,41 @@ def toggle_job_modal(job_id: str):
         reload_url=f"/ui/{KEY}/content",
         container_id=_CONTAINER_ID,
         loading_id=_LOADING_ID,
-    )
+    ))
 
 
 # ── Job CRUD-Aktionen ─────────────────────────────────────────────────────────
 
-@bp.route(f"/ui/{KEY}/jobs/", methods=["POST"])
-def create_job_apply():
+@router.post(f"/ui/{KEY}/jobs/", response_class=HTMLResponse)
+async def create_job_apply(request: Request):
     job_id = f"job-{uuid.uuid4().hex[:8]}"
-    data   = _parse_job_form()
+    form = await request.form()
+    data = _parse_job_form(form)
     try:
         create_job(job_id, data)
     except KeyError:
-        return "ID bereits vergeben", 409
-    return render_template(f"{KEY}/partials/list.html", **_ctx())
+        return HTMLResponse("ID bereits vergeben", status_code=409)
+    return render(request, f"{KEY}/partials/list.html", _ctx())
 
 
-@bp.route(f"/ui/{KEY}/jobs/<job_id>/update", methods=["POST"])
-def edit_job_apply(job_id: str):
-    data = _parse_job_form()
+@router.post(f"/ui/{KEY}/jobs/{{job_id}}/update", response_class=HTMLResponse)
+async def edit_job_apply(job_id: str, request: Request):
+    form = await request.form()
+    data = _parse_job_form(form)
     try:
         update_job(job_id, data)
     except KeyError:
-        return "Job nicht gefunden", 404
-    return render_template(f"{KEY}/partials/list.html", **_ctx())
+        return HTMLResponse("Job nicht gefunden", status_code=404)
+    return render(request, f"{KEY}/partials/list.html", _ctx())
 
 
 # ── Job-Test ──────────────────────────────────────────────────────────────────
 
-@bp.route(f"/ui/{KEY}/jobs/<job_id>/test", methods=["POST"])
-def test_job_view(job_id: str):
+@router.post(f"/ui/{KEY}/jobs/{{job_id}}/test", response_class=HTMLResponse)
+def test_job_view(job_id: str, request: Request):
     ok, msg = _test_job(job_id)
-    return _test_badge(ok, msg)
+    return _test_badge(request, ok, msg)
 
 
-def _test_badge(ok: bool, msg: str) -> str:
-    return render_template(f"{KEY}/partials/test_badge.html", ok=ok, msg=msg)
+def _test_badge(request: Request, ok: bool, msg: str):
+    return render(request, f"{KEY}/partials/test_badge.html", {"ok": ok, "msg": msg})

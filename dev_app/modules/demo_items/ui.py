@@ -1,12 +1,12 @@
-"""dev_app/modules/demo_items/ui.py – Flask-Blueprint"""
+"""dev_app/modules/demo_items/ui.py – FastAPI-Router"""
 
 from pathlib import Path
 
-from astrapi.core.ui.crud_blueprint import make_crud_blueprint
+from astrapi.core.ui.crud_blueprint import make_crud_router
 from .storage import store, KEY
 
-_DIR = Path(__file__).parent
-bp = make_crud_blueprint(
+_DIR   = Path(__file__).parent
+router = make_crud_router(
     store, KEY,
     schema_path=str(_DIR / "schema.yaml"),
     label="Demo Item",

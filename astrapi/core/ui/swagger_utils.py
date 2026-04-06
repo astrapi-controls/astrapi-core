@@ -136,85 +136,39 @@ def _summary_from_url(rule: str, method: str) -> str:
 # ── Spec aufbauen ─────────────────────────────────────────────────────────────
 
 def add_ui_routes_to_spec(app, project_root: Path) -> None:
-    """Liest alle Flask-Routen aus und trägt sie in app.apispec ein."""
-    skip = {"/ui/docs", "/ui/openapi.json", "/static/<path:filename>"}
-
-    with app.test_request_context():
-        for rule in app.url_map.iter_rules():
-            if rule.rule in skip:
-                continue
-
-            # Exakt die Methoden nehmen die Flask kennt — keine Extrapolation
-            methods = [
-                m.lower() for m in rule.methods
-                if m in ("GET", "POST", "PUT", "DELETE", "PATCH")
-            ]
-            if not methods:
-                continue
-
-            view = app.view_functions.get(rule.endpoint)
-
-            tag         = getattr(view, "_ui_tag",         None) or _tag_from_url(rule.rule)
-            summary_tpl = getattr(view, "_ui_summary",     None)
-            description = getattr(view, "_ui_description", None)
-
-            # Quelldatei relativ zum Projekt-Root
-            source_file = getattr(getattr(view, "__code__", None), "co_filename", None)
-            if source_file and not description:
-                try:
-                    description = "Defined in: " + str(
-                        Path(source_file).resolve().relative_to(project_root)
-                    )
-                except ValueError:
-                    description = source_file
-
-            # Path-Parameter
-            params = [
-                {"in": "path", "name": arg, "required": True, "schema": {"type": "string"}}
-                for arg in rule.arguments
-            ]
-
-            operations = {}
-            for method in methods:
-                summary = summary_tpl or _summary_from_url(rule.rule, method)
-                op = {
-                    "summary":     summary,
-                    "description": description or "",
-                    "tags":        [tag],
-                    "responses":   {"200": {"description": "HTML partial / redirect"}},
-                }
-                if params:
-                    op["parameters"] = params
-                operations[method] = op
-
-            app.apispec.path(path=rule.rule, operations=operations)
+    """Routen-Dokumentation – bei FastAPI nicht mehr nötig (OpenAPI ist eingebaut)."""
+    pass
 
 
 # ── Endpunkte registrieren ────────────────────────────────────────────────────
 
 def register_ui_docs(app, project_root: Path, swagger_html_path: Path) -> None:
-    """Registriert /ui/docs und /ui/openapi.json an der Flask-App."""
-    from apispec import APISpec
-    from flask import jsonify, Response
+    """Registriert /ui/docs und /ui/openapi.json an der FastAPI-App."""
+    from fastapi.responses import HTMLResponse, JSONResponse
 
-    app_name = app.config.get("APP_NAME", "AstrapiFlaskUi")
+    # App-Name aus FastAPI-Titel ableiten (ohne " API"-Suffix)
+    app_name = getattr(app, "title", "Astrapi").removesuffix(" API")
 
-    app.apispec = APISpec(
-        title=f"{app_name} UI-Routen",
-        version="1.0.0",
-        openapi_version="3.0.2",
-        info={"description": "Flask UI-Routen: HTMX-Partials, Modals, Seiten"},
-    )
+    try:
+        from apispec import APISpec
+        _spec = APISpec(
+            title=f"{app_name} UI-Routen",
+            version="1.0.0",
+            openapi_version="3.0.2",
+            info={"description": "UI-Routen: HTMX-Partials, Modals, Seiten"},
+        )
+    except ImportError:
+        return  # apispec nicht installiert – UI-Docs überspringen
 
-    @app.route("/ui/docs")
+    @app.get("/ui/docs", response_class=HTMLResponse, include_in_schema=False)
     def ui_docs():
+        if not swagger_html_path.exists():
+            return HTMLResponse("<p>swagger.html nicht gefunden</p>", status_code=404)
         html = swagger_html_path.read_text(encoding="utf-8")
         html = html.replace("{{OPENAPI_URL}}", "/ui/openapi.json")
         html = html.replace("{{TITLE}}", f"{app_name} – UI Docs")
-        return Response(html, mimetype="text/html")
+        return HTMLResponse(html)
 
-    @app.route("/ui/openapi.json")
+    @app.get("/ui/openapi.json", response_class=JSONResponse, include_in_schema=False)
     def ui_openapi_json():
-        return jsonify(app.apispec.to_dict())
-
-    add_ui_routes_to_spec(app, project_root)
+        return JSONResponse(_spec.to_dict())

@@ -1,16 +1,19 @@
-"""core/modules/sysinfo/ui.py – Flask-Blueprint für Sysinfo UI-Routen."""
-from flask import Blueprint, render_template
+"""core/modules/sysinfo/ui.py – FastAPI-Router für Sysinfo UI-Routen."""
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
+
+from astrapi.core.ui.render import render
 from .engine import collect
 
-KEY = "sysinfo"
-bp  = Blueprint(f"{KEY}_ui", __name__)
+KEY    = "sysinfo"
+router = APIRouter()
 
 
-@bp.route(f"/ui/{KEY}/content")
-def sysinfo_content():
-    return render_template(f"{KEY}/partials/tab.html", info=collect())
+@router.get(f"/ui/{KEY}/content", response_class=HTMLResponse)
+def sysinfo_content(request: Request):
+    return render(request, f"{KEY}/partials/tab.html", {"info": collect()})
 
 
-@bp.route(f"/ui/{KEY}/metrics")
-def sysinfo_metrics():
-    return render_template(f"{KEY}/partials/metrics.html", info=collect())
+@router.get(f"/ui/{KEY}/metrics", response_class=HTMLResponse)
+def sysinfo_metrics(request: Request):
+    return render(request, f"{KEY}/partials/metrics.html", {"info": collect()})

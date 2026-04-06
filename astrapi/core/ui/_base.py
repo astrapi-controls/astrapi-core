@@ -6,11 +6,11 @@ Jedes Modul erstellt eine Module-Instanz und exportiert sie als `module`:
     from astrapi.core.ui import Module
 
     module = Module(
-        key          = "mein_modul",
-        label        = "Mein Modul",
-        icon         = "box",
-        api_router   = router,
-        ui_blueprint = bp,
+        key        = "mein_modul",
+        label      = "Mein Modul",
+        icon       = "box",
+        api_router = router,
+        ui_router  = router_ui,
     )
 
 Das Framework (core/ui/module_registry.py) lädt alle Module automatisch
@@ -24,7 +24,6 @@ from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fastapi import APIRouter
-    from flask import Blueprint
 
 
 @dataclass
@@ -38,7 +37,7 @@ class Module:
 
     Optionale Felder:
         api_router        – FastAPI-Router für /api/<key>/...
-        ui_blueprint      – Flask-Blueprint für UI-Routen (/ui/<key>/...)
+        ui_router         – FastAPI-Router für UI-Routen (/ui/<key>/...)
         nav_url           – URL für hx-push-url (sichtbare Browser-URL, default: /<key>)
         nav_default       – ob dieser Eintrag die Startseite ist
         nav_group         – Gruppenbezeichnung in der Navigation
@@ -52,8 +51,8 @@ class Module:
     label: str
     icon:  str = "list"
 
-    api_router:   Optional[object] = field(default=None, repr=False)
-    ui_blueprint: Optional[object] = field(default=None, repr=False)
+    api_router: Optional[object] = field(default=None, repr=False)
+    ui_router:  Optional[object] = field(default=None, repr=False)
 
     nav_url:     Optional[str]  = None
     nav_default: bool           = False

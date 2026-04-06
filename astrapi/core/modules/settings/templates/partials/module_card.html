@@ -8,11 +8,28 @@
 {% set values = data['values'] %}
 
 <div>
-  <div class="ds-card on">
+  <div class="ds-card on" x-data="{ open: false }">
     <div class="card-body" style="padding:16px;">
 
-      <div style="font-weight:600; margin-bottom:14px;">{{ mod.label }}</div>
+      <button type="button"
+              @click="open = !open"
+              style="display:flex; align-items:center; justify-content:space-between;
+                     width:100%; background:none; border:none; padding:0;
+                     cursor:pointer; font-weight:600; color:inherit; font-size:inherit;">
+        <span>{{ mod.label }}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             style="transition:transform .2s; flex-shrink:0;"
+             :style="open ? 'transform:rotate(180deg)' : ''">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
 
+      <div x-show="open"
+           x-transition:enter="transition-all"
+           x-transition:enter-start="opacity-0"
+           x-transition:enter-end="opacity-100"
+           style="margin-top:14px;">
       <form hx-post="/ui/settings/save/module/{{ mod.key }}"
             hx-target="#settings-container"
             hx-swap="outerHTML"
@@ -141,6 +158,7 @@
         </div>
 
       </form>
+      </div>{# /x-collapse #}
     </div>
   </div>
 </div>

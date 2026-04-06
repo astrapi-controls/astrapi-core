@@ -149,7 +149,7 @@ def _expand_card_actions(actions: list, module_key: str) -> list:
     return expanded
 
 
-def load_modul(module_dir: Path, key: str, api_router, ui_blueprint) -> "Module":
+def load_modul(module_dir: Path, key: str, api_router, ui_router) -> "Module":
     from astrapi.core.ui._base import Module
 
     yaml_path = module_dir / "modul.yaml"
@@ -184,7 +184,7 @@ def load_modul(module_dir: Path, key: str, api_router, ui_blueprint) -> "Module"
         label                = cfg.get("label",       key.capitalize()),
         icon                 = cfg.get("icon",         "list"),
         api_router           = api_router,
-        ui_blueprint         = ui_blueprint,
+        ui_router            = ui_router,
         nav_group            = cfg.get("nav_group",    "Module"),
         nav_default          = bool(cfg.get("nav_default", False)),
         settings_defaults    = merged_defaults,
