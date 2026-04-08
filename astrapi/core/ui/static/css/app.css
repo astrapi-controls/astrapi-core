@@ -689,12 +689,22 @@ input,select,textarea { font-family:var(--font); }
 .table-ctx-menu { position:relative; }
 .table-ctx-dropdown {
   position:fixed;
-  background:var(--card); border:1px solid var(--border-s);
+  background:var(--card);
   border-radius:var(--rad); box-shadow:var(--sh);
   display:flex; flex-direction:row; gap:2px; padding:4px;
   z-index:200; white-space:nowrap;
 }
 .ds-list-table .col-actions .btn-icon.active { background:var(--sel); border-color:var(--border-s); }
+.table-ctx-dropdown--col { flex-direction:column; }
+.ctx-menu-item {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 10px; border-radius:5px;
+  background:transparent; border:none;
+  color:var(--text-2); font-size:13px;
+  cursor:pointer; white-space:nowrap; width:100%;
+  transition:all var(--t) var(--ease);
+}
+.ctx-menu-item:hover { background:var(--sel); color:var(--text); }
 
 /* Dark-mode: Tabellen-Trennlinien auf dunklen Hintergründen sichtbarer machen */
 :root:not(.light-mode) .ds-list-table-wrap       { border-color: rgba(255,255,255,0.13); }

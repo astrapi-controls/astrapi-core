@@ -202,19 +202,6 @@ class Scheduler:
         except Exception as _e:
             log.debug("activity_log nicht verfügbar: %s", _e)
 
-        # ── Start-Benachrichtigung ─────────────────────────────────────────────
-        try:
-            from astrapi.core.modules.notify import engine as _notify
-            _notify.send(
-                title   = f"Job gestartet: {label}",
-                message = f"{len(steps)} Schritt(e) werden ausgeführt.",
-                event   = _notify.INFO,
-                source  = job_id,
-                tags    = ["scheduler"],
-            )
-        except Exception as _e:
-            log.debug("Notify nicht verfügbar: %s", _e)
-
         # ── DB-Logging für Steps aktivieren ───────────────────────────────────
         try:
             from astrapi.core.system.logger import set_active_log_id as _set_log_id, log as _hlog

@@ -30,6 +30,23 @@ document.body.addEventListener("htmx:pushedIntoHistory", () => {
     updateActiveNav();
 });
 
+// ── Spalteneinstellungen zurücksetzen ─────────────────────────────────────────
+function resetColSettings(module) {
+    fetch(`/ui/preferences/col-widths/${module}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({widths: {}}),
+    });
+    localStorage.removeItem(`sort:${module}`);
+    const table = document.querySelector(`.ds-list-table[data-module="${module}"]`);
+    if (table) {
+        table.querySelectorAll('thead th').forEach(th => {
+            th.style.width = '';
+            th.classList.remove('sort-asc', 'sort-desc');
+        });
+    }
+}
+
 // ── Spaltenbreiten-Resize ─────────────────────────────────────────────────────
 function initColResize(table) {
     const module = table.dataset.module;

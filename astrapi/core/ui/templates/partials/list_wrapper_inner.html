@@ -156,7 +156,23 @@
         <th class="col-last-run sortable">Letzter Lauf</th>
         {% endif %}
         <th class="col-status">Status</th>
-        <th class="col-actions"></th>
+        <th class="col-actions">
+          <div class="table-actions">
+            <div class="table-ctx-menu"
+                 x-data="{open: false, pos: {top:0, right:0}, toggle(btn){ const r=btn.getBoundingClientRect(); this.pos={top: r.bottom+2, right: window.innerWidth-r.right}; this.open=!this.open; }}"
+                 @click.outside="open = false">
+              <button type="button" class="btn-icon" @click="toggle($el)" :class="{'active': open}" title="Spaltenoptionen">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+              </button>
+              <div class="table-ctx-dropdown table-ctx-dropdown--col" x-show="open" :style="'top:'+pos.top+'px;right:'+pos.right+'px'" @click="open = false">
+                <button type="button" class="ctx-menu-item" onclick="resetColSettings('{{ module }}')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  Spalten zurücksetzen
+                </button>
+              </div>
+            </div>
+          </div>
+        </th>
       </tr>
     </thead>
     <tbody>
