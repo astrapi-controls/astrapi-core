@@ -47,6 +47,7 @@ def make_crud_router(
     extra_page_actions_template: str | None = None,
     prefill_template: str | None = None,
     running_fn: Callable[[], dict] | None = None,
+    filters: list[dict] | None = None,
 ) -> APIRouter:
     """Erstellt einen generischen CRUD-APIRouter.
 
@@ -112,7 +113,25 @@ def make_crud_router(
 
     @router.get(f"/ui/{key}/content", response_class=HTMLResponse)
     def content(request: Request):
-        return render(request, "partials/list_wrapper.html", _ctx())
+        import re
+        items = store.list()
+        resolved_filters = []
+        for f in (filters or []):
+            val = request.query_params.get(f["param"], "")
+            if not val:
+                cookie_name = re.sub(r"[^a-zA-Z0-9]", "_", f"mf_{key}__{f['param']}")
+                val = request.cookies.get(cookie_name, "")
+            if val:
+                items = {k: v for k, v in items.items() if str(v.get(f["param"], "")) == val}
+            resolved_filters.append({
+                "param":     f["param"],
+                "label":     f["label"],
+                "all_label": f.get("all_label", "Alle"),
+                "active":    val,
+                "options":   f["options_fn"](),
+            })
+        extra = {"filter_defs": resolved_filters} if resolved_filters else {}
+        return render(request, "partials/list_wrapper.html", _ctx(cfg=items, **extra))
 
     @router.get(f"/ui/{key}/create", response_class=HTMLResponse)
     def create_modal(request: Request):

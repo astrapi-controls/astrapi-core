@@ -45,6 +45,25 @@
 
     {% if extra_page_actions_template %}{% include extra_page_actions_template ignore missing %}{% endif %}
 
+    {% if filter_defs %}
+      {% for f in filter_defs %}
+      <select
+        class="form-select" style="font-size:12px; padding:4px 8px; width:auto;"
+        x-data="moduleFilter('{{ module }}__{{ f.param }}')"
+        @change="save($el.value)"
+        hx-get="/ui/{{ module }}/content"
+        hx-target="#{{ container_id }}"
+        hx-swap="innerHTML"
+        hx-include="[data-filter-for='{{ module }}']"
+        data-filter-for="{{ module }}">
+        <option value="">{{ f.all_label }}</option>
+        {% for opt in f.options %}
+        <option value="{{ opt.value }}" {% if opt.value | string == f.active | string %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+      </select>
+      {% endfor %}
+    {% endif %}
+
     {% if has_create | default(True) %}
     {{ ui.add_button(module=module, container_id=container_id, loading_id=loading_id) }}
     {% endif %}

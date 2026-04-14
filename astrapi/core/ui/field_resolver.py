@@ -21,7 +21,8 @@ def _fetch_options(endpoint: str) -> list:
     if endpoint.startswith("/api/remotes/for-select"):
         from urllib.parse import urlparse, parse_qs
         qs = parse_qs(urlparse(endpoint).query)
-        type_filter = qs.get("type", [None])[0]
+        type_filter    = qs.get("type",  [None])[0]
+        include_local  = qs.get("local", ["1"])[0] != "0"
         from app.modules.remotes.engine import get_all_remotes_for_select
-        return [{"value": r["id"], "label": r["label"]} for r in get_all_remotes_for_select(type_filter=type_filter)]
+        return [{"value": r["id"], "label": r["label"]} for r in get_all_remotes_for_select(type_filter=type_filter, include_local=include_local)]
     return []

@@ -164,6 +164,22 @@ document.addEventListener('keydown', function(e) {
     if (modals.length > 0) modals[modals.length - 1].remove();
 });
 
+// ── Modul-Filter (Cookie-persistent, überlebt Browser-Reload) ────────────────
+// Verwendung: x-data="moduleFilter('modulname__feldname')"
+// Der Cookie wird beim HTMX-Request mitgesendet → Server kann ihn beim
+// initialen Render lesen und die korrekte Option vorauswählen.
+function moduleFilter(key) {
+    const _cn = 'mf_' + key.replace(/[^a-zA-Z0-9]/g, '_');
+    return {
+        save(val) {
+            if (val)
+                document.cookie = _cn + '=' + encodeURIComponent(val) + '; path=/; SameSite=Lax; max-age=2592000';
+            else
+                document.cookie = _cn + '=; path=/; max-age=0';
+        },
+    };
+}
+
 // ── Karten-/Listenansicht Toggle ─────────────────────────────────────────────
 function viewToggle(_module) {
     const mq = window.matchMedia('(max-width: 767px)');
