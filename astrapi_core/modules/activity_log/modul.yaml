@@ -1,0 +1,4 @@
+# core/modules/activity_log/modul.yaml
+label:       Activity Log
+nav_group:   System
+nav_default: false

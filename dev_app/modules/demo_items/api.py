@@ -3,7 +3,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
-from astrapi.core.ui.crud_router import make_crud_router
+from astrapi_core.ui.crud_router import make_crud_router
 from .storage import store, KEY
 
 

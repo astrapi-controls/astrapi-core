@@ -1,0 +1,24 @@
+# core/navigation.yaml – Framework-eigene Navigation
+#
+# Definiert die Core-Module die im Menü erscheinen sollen.
+# Wird mit app/navigation.yaml zusammengeführt (Core-Einträge erscheinen unten).
+
+- key:   activity_log
+  label: Activity Log
+  group: System
+
+- key:   notify
+  label: Benachrichtigungen
+  group: System
+
+- key:   scheduler
+  label: Scheduler
+  group: System
+
+- key:   system
+  label: System
+  group: System
+
+- key:   settings
+  label: Einstellungen
+  group: System

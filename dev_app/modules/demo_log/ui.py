@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-from astrapi.core.ui.render import render
+from astrapi_core.ui.render import render
 
 KEY    = "demo_log"
 router = APIRouter()

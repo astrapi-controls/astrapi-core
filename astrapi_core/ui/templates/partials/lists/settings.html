@@ -1,0 +1,61 @@
+{#
+  core/ui/templates/partials/lists/settings.html
+  Einstellungen – optionale Karten: Update, SSH-Key, Moduleinstellungen
+#}
+{% import 'partials/components/ui_macros.html' as ui %}
+
+<div id="settings-container">
+
+  <div class="table-toolbar" data-debug-label="table-toolbar">
+    <div class="table-toolbar-title">Einstellungen</div>
+  </div>
+
+  <div class="section-stack">
+
+  {% if flash_message %}
+  <div class="alert alert-info" style="margin-bottom:14px;">
+    {{ flash_message }}
+  </div>
+  {% endif %}
+
+  {# ── SSH-Key (nur wenn App es benötigt) ──────────────────────────────────── #}
+  {% if show_ssh_key %}
+  <div>
+    <div class="ds-card on" x-data="{ open: false }" data-debug-label="ds-card">
+      <div class="card-body" style="padding:16px;" data-debug-label="card-body">
+        <button type="button"
+                @click="open = !open"
+                style="display:flex; align-items:center; justify-content:space-between;
+                       width:100%; background:none; border:none; padding:0;
+                       cursor:pointer; font-weight:600; color:inherit; font-size:inherit;">
+          <span>{{ app_name }}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round"
+               style="transition:transform .2s; flex-shrink:0;"
+               :style="open ? 'transform:rotate(180deg)' : ''">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div x-show="open"
+             x-transition:enter="transition-all"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             style="margin-top:14px;">
+          <div hx-get="/ui/settings/ssh-key"
+               hx-trigger="load"
+               hx-swap="innerHTML">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Moduleinstellungen ──────────────────────────────────────────────────── #}
+  {% for key, data in (mod_settings | default({})).items() %}
+  {% include "settings/partials/module_card.html" %}
+  {% endfor %}
+
+  </div>{# ── Ende section-stack ── #}
+
+</div>

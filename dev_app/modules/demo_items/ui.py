@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from astrapi.core.ui.crud_blueprint import make_crud_router
+from astrapi_core.ui.crud_blueprint import make_crud_router
 from .storage import store, KEY
 
 _DIR   = Path(__file__).parent

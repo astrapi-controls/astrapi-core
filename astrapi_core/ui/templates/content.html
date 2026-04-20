@@ -1,0 +1,12 @@
+{#
+  core/ui/templates/content.html
+
+  Basisvorlage für alle Module. Stellt die Karten-Hülle bereit.
+  CRUD-Module ohne eigenes content.html nutzen den Default-Block
+  (list_wrapper_inner.html). Custom-Module überschreiben {% block inner %}.
+#}
+<div id="{{ container_id }}" class="module-card">
+  {% block inner %}
+    {% include "partials/list_wrapper_inner.html" %}
+  {% endblock %}
+</div>
