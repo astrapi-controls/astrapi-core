@@ -376,6 +376,8 @@
 {%- elif col.type == 'composed' -%}
 {%- set _composed = col.template | replace('{item_name}', item_name | string) | replace('{key}', _val | string) -%}
 <td class="{{ col.cls }}">{{ _composed if _val else '—' }}</td>
+{%- elif col.type == 'status' -%}
+<td class="{{ col.cls }}">{{ status_inline(_val) }}</td>
 {%- else -%}
 <td>{{ _val or '—' }}</td>
 {%- endif %}

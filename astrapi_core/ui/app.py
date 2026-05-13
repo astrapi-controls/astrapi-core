@@ -48,6 +48,22 @@ from .storage import init as storage_init
 CORE_ROOT = Path(__file__).resolve().parent
 
 
+# ── Remote-Host-Resolver-Registry ────────────────────────────────────────────
+# Apps registrieren ihre eigene Implementierung via register_remote_resolver().
+
+_remote_host_resolver = None
+
+
+def register_remote_resolver(fn) -> None:
+    """Registriert eine App-spezifische Funktion zur Remote-Host-Auflösung.
+
+    fn: Callable[[str | int], str]  →  Hostname oder '—'
+    Wird von Apps (z.B. astrapi-backup) aus modules/remotes/__init__.py aufgerufen.
+    """
+    global _remote_host_resolver
+    _remote_host_resolver = fn
+
+
 def _load_module_file(name: str, path: Path):
     import sys
 
@@ -166,13 +182,12 @@ def create(
     def _resolve_remote_host(remote_id) -> str:
         if not remote_id:
             return "—"
-        try:
-            from app.modules.remotes.engine import get_remote
-
-            r = get_remote(remote_id)
-            return r.get("host") or "—" if r else "—"
-        except Exception:
-            return "—"
+        if _remote_host_resolver is not None:
+            try:
+                return _remote_host_resolver(remote_id) or "—"
+            except Exception:
+                return "—"
+        return "—"
 
     jinja_env.globals["resolve_remote_host"] = _resolve_remote_host
 

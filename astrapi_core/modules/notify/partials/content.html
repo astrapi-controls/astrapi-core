@@ -58,10 +58,8 @@
     <tbody>
       {% for job_id, job in jobs.items() %}
       <tr class="on">
-        <td><code class="mono">{{ job.channel_id }}</code></td>
-        <td class="col-trunc" title="{{ job.events | join(', ') if job.events else '' }}">
-          {{ job.label or job_id }}
-        </td>
+        <td class="col-trunc" title="{{ job.label or job_id }}">{{ job.label or job_id }}</td>
+        <td><code class="mono">{{ channels.get(job.channel_id, {}).get('label', job.channel_id) or job.channel_id }}</code></td>
         <td class="col-actions">
           <div class="table-actions">
             <div class="table-ctx-menu"

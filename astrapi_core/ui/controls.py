@@ -50,6 +50,7 @@ class Col:
         badge_list  – Badges für eine Liste von Werten
         link        – anklickbarer Link
         composed    – Template-String mit {key} Platzhaltern
+        status      – Standard-Status-Badge via status_inline-Makro (ok/error/warning/running/…)
     """
 
     type: str
@@ -121,6 +122,11 @@ class Col:
     def composed(cls, key: str, label: str, template: str, css: str = "col-mono") -> "Col":
         """template: String mit {item_name} und {key} (z.B. 'ctl/{item_name}:{key}')"""
         return cls(type="composed", key=key, label=label, cls=css, template=template)
+
+    @classmethod
+    def status(cls, key: str, label: str, css: str = "col-status") -> "Col":
+        """Standard-Status-Badge via status_inline-Makro (ok/error/warning/running/…)"""
+        return cls(type="status", key=key, label=label, cls=css)
 
 
 # ── Card-Body-Felder (meta-grid) ───────────────────────────────────────────────

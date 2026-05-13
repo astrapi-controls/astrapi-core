@@ -1,5 +1,20 @@
 """Helpers for resolving dynamic field options before template rendering."""
 
+from typing import Callable
+
+# Registry: URL-Präfix → Funktion(endpoint: str) -> list[dict]
+_options_fetchers: dict[str, Callable[[str], list]] = {}
+
+
+def register_options_fetcher(prefix: str, fn: Callable[[str], list]) -> None:
+    """Registriert eine Funktion zum Auflösen von options_endpoint-URLs.
+
+    fn(endpoint: str) → list[{"value": ..., "label": ...}]
+    Wird von Apps (z.B. astrapi-backup) aufgerufen, um app-spezifische
+    Datenquellen bereitzustellen, ohne dass astrapi-core von der App abhängt.
+    """
+    _options_fetchers[prefix] = fn
+
 
 def resolve_options_endpoint(fields: list) -> list:
     """Replaces options_endpoint with actual options fetched from the engine."""
@@ -18,11 +33,7 @@ def resolve_options_endpoint(fields: list) -> list:
 
 
 def _fetch_options(endpoint: str) -> list:
-    if endpoint.startswith("/api/remotes/for-select"):
-        from urllib.parse import urlparse, parse_qs
-        qs = parse_qs(urlparse(endpoint).query)
-        type_filter    = qs.get("type",  [None])[0]
-        include_local  = qs.get("local", ["1"])[0] != "0"
-        from app.modules.remotes.engine import get_all_remotes_for_select
-        return [{"value": r["id"], "label": r["label"]} for r in get_all_remotes_for_select(type_filter=type_filter, include_local=include_local)]
+    for prefix, fn in _options_fetchers.items():
+        if endpoint.startswith(prefix):
+            return fn(endpoint)
     return []
